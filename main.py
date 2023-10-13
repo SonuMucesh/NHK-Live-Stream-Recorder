@@ -154,6 +154,13 @@ def use_config_to_set_variables():
         print("No livestream_url found in config.json, so the program will not be able to get the livestream")
         return False
 
+    print("LOCAL_TIMEZONE: " + str(LOCAL_TIMEZONE))
+    print("RECORDING_PATH: " + str(RECORDING_PATH))
+    print("PROGRAM_IDS: " + str(PROGRAM_IDS))
+    print("EPG_URL: " + str(EPG_URL))
+    print("LIVESTREAM_URL: " + str(LIVESTREAM_URL) + "\n")
+    return True
+
 
 def main():
     # Check if the config.json file exists and if it does, use it to set the variables
