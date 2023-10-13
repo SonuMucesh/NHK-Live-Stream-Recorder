@@ -1,0 +1,11 @@
+version: '3'
+services:
+  nhk-stream-dl:
+    build:
+      context: .
+    environment:
+      - RECORDING_PATH=/app/recordings
+      - PROGRAM_IDS=72hours,cycle,somewhere,
+      - LOCAL_TIMEZONE=Europe/London
+    volumes:
+       - C:\Users\sonum\Videos\NHK VODS:/app/recordings
