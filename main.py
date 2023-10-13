@@ -7,16 +7,17 @@ import time
 import os
 
 # Global variables
-local_timezone = ""
 program_json = []
 time_to_sleep_till_next_program = 0
 programs_to_download = []
 cached_schedule = []
-url = ""
 
 # Constants
-URL = "https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json"
+LOCAL_TIMEZONE = pytz.timezone("Europe/London")
+EPG_URL = ""
+LIVESTREAM_URL = ""
 PROGRAM_IDS = []
+RECORDING_PATH = ""
 
 
 def get_epg_now():
@@ -34,7 +35,7 @@ def get_epg_now():
         'Sec-Fetch-Site': 'cross-site'
     }
 
-    response = requests.get(URL, headers=headers)
+    response = requests.get(EPG_URL, headers=headers)
     json_response = response.json()
 
     global cached_schedule
@@ -45,8 +46,8 @@ def get_epg_now():
     if len(programs) == 0:
         print("No programs found from EPG")
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
-        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).astimezone(local_timezone)
-        current_time = datetime.now(local_timezone)
+        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).astimezone(LOCAL_TIMEZONE)
+        current_time = datetime.now(LOCAL_TIMEZONE)
         global time_to_sleep_till_next_program
         time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
         print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds then will call main() again"
@@ -57,7 +58,7 @@ def get_epg_now():
     else:
         print("Programs found from EPG")
         print("Programs list from EPG: " + str(len(programs)) + "and current time is: " +
-              str(datetime.now(local_timezone).strftime("%Y-%m-%d %H:%M:%S")) + "\n")
+              str(datetime.now(LOCAL_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")) + "\n")
         for program in programs:
             store_programs_to_download(program)
 
@@ -87,11 +88,10 @@ def download_video(program):
     filename = f"{program['title']} - {currentYear}x{currentDay}.mp4"
     if program["subtitle"] != "":
         filename = f"{program['title']} - {currentYear}x{currentDay} - {program['subtitle']}.mp4"
-    output_path = os.environ.get("RECORDING_PATH")
-    output_file = os.path.join(output_path, filename)
+    output_file = os.path.join(RECORDING_PATH, filename)
     ffmpeg_command = [
         "ffmpeg",
-        "-i", "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
+        "-i", LIVESTREAM_URL,
         "-t", str(time_to_download),
         "-c", "copy",
         "-metadata", f"description={program['description']}",
@@ -112,27 +112,53 @@ def download_video(program):
     print("Programs to download left: " + str(len(programs_to_download)) + "\n")
 
 
-def main():
-    global local_timezone, output_path, PROGRAM_IDS, url
-    local_timezone = os.environ.get("LOCAL_TIMEZONE")
-    output_path = os.environ.get("RECORDING_PATH", "asjdnasjdn")
-    program_ids_list = os.environ.get("PROGRAM_IDS", "cycle,newsline,")
+def use_config_to_set_variables():
+    global LOCAL_TIMEZONE, RECORDING_PATH, PROGRAM_IDS, EPG_URL, LIVESTREAM_URL
+    with open("config.json") as config_file:
+        config = json.load(config_file)
 
-    if not local_timezone:
-        print("Local timezone not specified in the environment variable LOCAL_TIMEZONE.")
-        print("Using Europe/London as default timezone.")
-        local_timezone = pytz.timezone("Europe/London")
+    # Extract the parameters from the config
+    local_timezone_config = config.get("local_timezone")
+    recording_path_config = config.get("recording_path")
+    program_ids_list_config = config.get("program_ids")
+    epg_url_config = config.get("epg_url")
+    livestream_url_config = config.get("livestream_url")
 
-    if not output_path:
-        print("Output path not specified in the environment variable OUTPUT_PATH.")
-        return
-
-    if program_ids_list:
-        PROGRAM_IDS = program_ids_list.split(",")
+    # Set the global variables
+    if local_timezone_config is not None:
+        LOCAL_TIMEZONE = pytz.timezone(local_timezone_config)
     else:
-        print("Program IDs not specified in the environment variable PROGRAM_IDS.")
-        return
+        print("No local_timezone found in config.json, using Europe/London")
 
+    if recording_path_config is not None:
+        RECORDING_PATH = recording_path_config
+    else:
+        print("No output_path found in config.json, using recordings")
+        RECORDING_PATH = os.path.join(os.getcwd(), "recordings")
+
+    if program_ids_list_config is not None:
+        PROGRAM_IDS = program_ids_list_config
+    else:
+        print("No program_ids found in config.json, using empty list")
+        PROGRAM_IDS = []
+
+    if epg_url_config is not None:
+        EPG_URL = epg_url_config
+    else:
+        print("No epg_url found in config.json, so the program will not be able to get the EPG")
+        return False
+
+    if livestream_url_config is not None:
+        LIVESTREAM_URL = livestream_url_config
+    else:
+        print("No livestream_url found in config.json, so the program will not be able to get the livestream")
+        return False
+
+
+def main():
+    # Check if the config.json file exists and if it does, use it to set the variables
+    if use_config_to_set_variables() is False:
+        return False
 
     get_epg_now()
     for program in programs_to_download:
@@ -148,11 +174,11 @@ def main():
         end_time_utc = datetime.utcfromtimestamp(end_time_seconds).replace(tzinfo=pytz.UTC)
 
         # Get the current time
-        current_time = datetime.now(local_timezone)
+        current_time = datetime.now(LOCAL_TIMEZONE)
 
         # Convert the start_time_utc to datetime object in your local timezone
-        start_time_local = start_time_utc.astimezone(local_timezone)
-        end_time_local = end_time_utc.astimezone(local_timezone)
+        start_time_local = start_time_utc.astimezone(LOCAL_TIMEZONE)
+        end_time_local = end_time_utc.astimezone(LOCAL_TIMEZONE)
 
         # Calculate the time difference between the adjusted start time and the current time
         global time_to_sleep_till_next_program
@@ -179,7 +205,7 @@ def main():
         download_video(program)
 
     if len(programs_to_download) == 0:
-        current_time = datetime.now(local_timezone)
+        current_time = datetime.now(LOCAL_TIMEZONE)
         print("No more programs to download at the end of main() and current time is: " +
               str(current_time.strftime("%Y-%m-%d %H:%M:%S") + "\n"))
         main()

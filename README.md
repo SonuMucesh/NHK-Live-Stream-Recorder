@@ -1,6 +1,6 @@
 # NHK World Video Downloader
 
-This script allows you to download videos from NHK World based on the current schedule obtained from their EPG (Electronic Program Guide) API.
+This script allows you to download shows from NHK World based on the current schedule obtained from their EPG (Electronic Program Guide) API.
 
 ## Prerequisites
 
