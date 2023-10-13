@@ -21,6 +21,3 @@ jobs:
 
       - name: Build Docker image
         run: docker buildx build --platform linux/amd64,linux/arm64 -t nhk-stream-dl .
-
-      - name: Run Docker image
-        run: docker run nhk-stream-dl
