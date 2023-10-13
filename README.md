@@ -48,7 +48,7 @@ sudo apt-get install ffmpeg
 }
 ```
 
-The Program IDS can be retrieved from this command:
+The Program IDs can be retrieved from this command:
 
 ```bash
 curl --location 'https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json'
