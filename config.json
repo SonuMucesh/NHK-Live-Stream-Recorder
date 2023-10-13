@@ -2,6 +2,6 @@
   "epg_url": "https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json",
   "local_timezone": "Europe/London",
   "recording_path": "C:\\Users\\sonum\\Videos\\NHK VODS",
-  "program_ids": ["72hours","cycle","somewhere","jarena"],
+  "program_ids": ["72hours","cycle","somewhere","japanrailway",""],
   "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8"
 }
