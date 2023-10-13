@@ -110,7 +110,11 @@ The script will retrieve the Electronic Program Guide (EPG) from the NHKニュ�
 
 Alternatively, you can use Docker to run the NHK Stream Downloader. Make sure you have Docker installed on your machine.
 
-1. Pull the Docker image from the DockerHub repository:
+1. Pull the Docker image from the [DockerHub repository](https://hub.docker.com/repository/docker/sonumucesh/nhk-record/general) or build it yourself:
+
+```bash
+docker build -t nhk-stream-dl .
+```
 
 ```bash
 docker pull sonumucesh/nhk-record
@@ -121,6 +125,21 @@ docker pull sonumucesh/nhk-record
 ```bash
 docker run --name nhk-stream-dl -v /path/to/config.json:/app/config.json -v /path/to/recordings:/app/recordings sonumucesh/nhk-record
 ```
+
+3. You can also run the container using docker-compose:
+
+```bash
+version: '3'
+services:
+  nhk-stream-dl:
+    build:
+      context: .
+    environment:
+      - CONFIG_PATH=/app/config.json
+    volumes:
+      - ./config.json:/app/config.json
+      - ./recordings:/app/recordings
+ ```
 
 Make sure to replace `/path/to/config.json` and `/path/to/recordings` with the actual paths to your configuration file and desired output directory.
 
