@@ -25,17 +25,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Check for changes in main.py
-        id: check_changes
-        run: |
-          if git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- main.py; then
-            echo "main.py has not changed"
-            echo "::set-output name=changed::false"
-          else
-            echo "main.py has changed"
-            echo "::set-output name=changed::true"
-          fi
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
@@ -43,4 +32,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.check_changes.outputs.changed }}
           tags: sonumucesh/nhk-record:latest
-        if: steps.check_changes.outputs.changed == 'true'
