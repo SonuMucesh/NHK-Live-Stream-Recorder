@@ -223,7 +223,6 @@ def main():
 
         # Check if the last item in the schedule has ended and if it hasn't, sleep until it has
         if last_item_end_time > current_time:
-            global time_to_sleep_till_next_program
             time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
             print("Last item in the schedule has not ended yet with end time: " + str(last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) +
                   " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
