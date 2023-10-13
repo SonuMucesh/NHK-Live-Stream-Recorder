@@ -1,4 +1,4 @@
-name: Docker Build, Push, and Create Package
+name: Docker Build and Push to GitHub Container Registry
 
 on:
   push:
@@ -41,26 +41,19 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
+          push: ${{ steps.check_changes.outputs.changed }}
           tags: sonumucesh/nhk-record:latest
+
+      - name: Set up Docker Buildx for GitHub Container Registry
+        run: docker buildx create --use --name=ghcr
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image to GitHub Container Registry
+        run: docker buildx build --platform linux/amd64,linux/arm64 --push --tag ghcr.io/${{ github.repository }}:latest .
         if: steps.check_changes.outputs.changed == 'true'
-
-      - name: Create GitHub Package
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: false
-          tags: sonumucesh/nhk-record:latest
-          outputs: type=oci, name=package
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: latest
-          release_name: Release latest
-          draft: false
-          prerelease: false
-          files: ${{ steps.create_package.outputs.package }}
