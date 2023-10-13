@@ -16,7 +16,7 @@ cached_schedule = []
 LOCAL_TIMEZONE = pytz.timezone("Europe/London")
 EPG_URL = ""
 LIVESTREAM_URL = ""
-PROGRAM_IDS = []
+SERIES_IDS = []
 RECORDING_PATH = ""
 
 
@@ -41,7 +41,7 @@ def get_epg_now():
     global cached_schedule
     cached_schedule = json_response["channel"]["item"]
 
-    programs = [program for program in json_response["channel"]["item"] if program["pgm_gr_id"] in PROGRAM_IDS]
+    programs = [program for program in json_response["channel"]["item"] if program["seriesId"] in SERIES_IDS]
 
     if len(programs) == 0:
         print("No programs found from EPG")
@@ -113,14 +113,14 @@ def download_video(program):
 
 
 def use_config_to_set_variables():
-    global LOCAL_TIMEZONE, RECORDING_PATH, PROGRAM_IDS, EPG_URL, LIVESTREAM_URL
+    global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL
     with open("config.json") as config_file:
         config = json.load(config_file)
 
     # Extract the parameters from the config
     local_timezone_config = config.get("local_timezone")
     recording_path_config = config.get("recording_path")
-    program_ids_list_config = config.get("program_ids")
+    series_ids_list_config = config.get("series_ids")
     epg_url_config = config.get("epg_url")
     livestream_url_config = config.get("livestream_url")
 
@@ -136,11 +136,11 @@ def use_config_to_set_variables():
         print("No output_path found in config.json, using recordings")
         RECORDING_PATH = os.path.join(os.getcwd(), "recordings")
 
-    if program_ids_list_config is not None:
-        PROGRAM_IDS = program_ids_list_config
+    if series_ids_list_config is not None:
+        SERIES_IDS = series_ids_list_config
     else:
-        print("No program_ids found in config.json, using empty list")
-        PROGRAM_IDS = []
+        print("No series_ids found in config.json, using empty list")
+        SERIES_IDS = []
 
     if epg_url_config is not None:
         EPG_URL = epg_url_config
@@ -156,7 +156,7 @@ def use_config_to_set_variables():
 
     print("LOCAL_TIMEZONE: " + str(LOCAL_TIMEZONE))
     print("RECORDING_PATH: " + str(RECORDING_PATH))
-    print("PROGRAM_IDS: " + str(PROGRAM_IDS))
+    print("SERIES_IDS: " + str(SERIES_IDS))
     print("EPG_URL: " + str(EPG_URL))
     print("LIVESTREAM_URL: " + str(LIVESTREAM_URL) + "\n")
     return True
