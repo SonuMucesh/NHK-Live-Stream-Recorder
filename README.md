@@ -132,8 +132,8 @@ docker run --name nhk-stream-dl -v /path/to/config.json:/app/config.json -v /pat
 version: '3'
 services:
   nhk-stream-dl:
-    build:
-      context: .
+    image: sonumucesh/nhk-record:latest
+    restart: unless-stopped
     environment:
       - CONFIG_PATH=/app/config.json
     volumes:
