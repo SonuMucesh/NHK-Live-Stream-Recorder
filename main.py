@@ -46,7 +46,8 @@ def get_epg_now():
     if len(programs) == 0:
         print("No programs found from EPG")
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
-        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).astimezone(LOCAL_TIMEZONE)
+        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time)\
+            .replace(tzinfo=pytz.UTC).astimezone(LOCAL_TIMEZONE)
         current_time = datetime.now(LOCAL_TIMEZONE)
         global time_to_sleep_till_next_program
         time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
@@ -214,7 +215,21 @@ def main():
     if len(programs_to_download) == 0:
         current_time = datetime.now(LOCAL_TIMEZONE)
         print("No more programs to download at the end of main() and current time is: " +
-              str(current_time.strftime("%Y-%m-%d %H:%M:%S") + "\n"))
+              str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
+
+        last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
+        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).replace(tzinfo=pytz.UTC).astimezone(LOCAL_TIMEZONE)
+        current_time = datetime.now(LOCAL_TIMEZONE)
+
+        # Check if the last item in the schedule has ended and if it hasn't, sleep until it has
+        if last_item_end_time > current_time:
+            global time_to_sleep_till_next_program
+            time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
+            print("Last item in the schedule has not ended yet with end time: " + str(last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) +
+                  " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
+            print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds and current time is: " +
+                  str(current_time.strftime("%Y-%m-%d %H:%M:%S")) + "\n")
+            time.sleep(time_to_sleep_till_next_program)
         main()
 
 
