@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: Docker Build, Push, and Create Package
 
 on:
   push:
@@ -36,11 +36,31 @@ jobs:
             echo "::set-output name=changed::false"
           fi
 
-      - name: Build and push
-        uses: docker/build-push-action@v5
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: sonumucesh/nhk-record:latest
         if: steps.check_changes.outputs.changed == 'true'
+
+      - name: Create GitHub Package
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: sonumucesh/nhk-record:latest
+          outputs: type=oci, name=package
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v1.0.0
+          release_name: Release v1.0.0
+          draft: false
+          prerelease: false
+          files: ${{ steps.create_package.outputs.package }}
