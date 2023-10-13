@@ -7,3 +7,4 @@ services:
       - CONFIG_PATH=/app/config.json
     volumes:
       - ./config.json:/app/config.json
+      - ./recordings:/app/recordings
