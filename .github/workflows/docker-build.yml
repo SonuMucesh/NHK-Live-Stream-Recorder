@@ -28,12 +28,12 @@ jobs:
       - name: Check for changes in main.py
         id: check_changes
         run: |
-          if git diff-tree --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -q '^main.py$'; then
-            echo "main.py has changed"
-            echo "::set-output name=changed::true"
-          else
+          if git diff --quiet ${{ github.event.before }} ${{ github.event.after }} -- main.py; then
             echo "main.py has not changed"
             echo "::set-output name=changed::false"
+          else
+            echo "main.py has changed"
+            echo "::set-output name=changed::true"
           fi
 
       - name: Build and push Docker image
