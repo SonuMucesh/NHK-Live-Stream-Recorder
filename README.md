@@ -43,18 +43,18 @@ sudo apt-get install ffmpeg
   "epg_url": "https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json",
   "local_timezone": "Europe/London",
   "recording_path": "PATH/TO/RECORDINGS", 
-  "program_ids": ["72hours","cycle","somewhere","japanrailway"],
+  "series_ids": ["4026","2066","4017","2105"],
   "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8"
 }
 ```
 
-The Program IDs can be retrieved from this command:
+The Series IDs can be retrieved from this command:
 
 ```bash
 curl --location 'https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json'
 ```
 
-Which returns the EPG in JSON format where `pgm_gr_id` is the Program ID:
+Which returns the EPG in JSON format where `seriesId` is the Series ID:
 
 ```json
     "channel": {
