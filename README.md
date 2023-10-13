@@ -5,7 +5,7 @@ It retrieves program information NHK World and uses FFmpeg to download the video
 
 ## Getting Started
 
-These instructions will help you get the NHK Stream Downloader up and running on your local machine or in a Docker container.
+These instructions will help you get the NHK Live Stream Recorder up and running on your local machine or in a Docker container.
 
 ### Prerequisites
 
