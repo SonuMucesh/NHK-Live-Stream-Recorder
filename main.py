@@ -188,8 +188,7 @@ def check_if_duplicate(series, episode):
         return False
     else:
         print("The episode has not been downloaded.")
-        episode_title = series['title'] + " - " + str(episode['seasonNumber']) + "x" \
-                        + str(episode['episodeNumber']) + " - " + episode['title']
+        episode_title = f"{series['title']} - {episode['seasonNumber']}x{episode['episodeNumber']} - {episode['title']}"
         print(f"Episode title: {episode_title}\n")
         return episode_title
 
