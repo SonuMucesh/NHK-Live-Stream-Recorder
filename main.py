@@ -6,6 +6,7 @@ import pytz
 import time
 import os
 from pyarr import SonarrAPI
+from fuzzywuzzy import fuzz
 
 # Global variables
 time_to_sleep_till_next_program = 0
@@ -23,6 +24,7 @@ SONARR_API_KEY = ""
 SONARR_INTEGRATION = ""
 SERIES_IDS_MAPPING = {}
 FFMPEG_LOG_PATH = ""
+FUZZY_MATCH_RATIO = 85
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
     'Accept': '*/*',
@@ -164,8 +166,9 @@ def sonarr(program):
 
     for episode in episodes:
         sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
+        ratio = fuzzy_match(program, episode)
 
-        if episode['title'] == epg_program_sub_title:
+        if ratio > FUZZY_MATCH_RATIO:
             print("Program from EPG:")
             print(f"title: {epg_program_sub_title}")
             print(f"with non-converted air date: {epg_air_date}")
@@ -179,8 +182,13 @@ def sonarr(program):
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
-            else:
+            elif episode_title is not False:
                 store_programs_to_download(program)
+
+
+def fuzzy_match(program, episode):
+    title_ratio = fuzz.ratio(program['subtitle'], episode['title'])
+    return title_ratio
 
 
 def check_if_duplicate(series, episode):
@@ -204,7 +212,7 @@ def use_config_to_set_variables():
     Use the `config.json` file to set the global variables.
     """
     global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL, SONARR_INTEGRATION, \
-        SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING, FFMPEG_LOG_PATH
+        SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING, FFMPEG_LOG_PATH, FUZZY_MATCH_RATIO
     with open("config.json") as config_file:
         config = json.load(config_file)
 
@@ -219,6 +227,7 @@ def use_config_to_set_variables():
     sonarr_api_key_config = config.get("sonarr_api_key")
     series_ids_mapping_config = config.get("series_ids_mapping")
     ffmpeg_log_path_config = config.get("ffmpeg_log_path")
+    fuzzy_match_ratio_config = config.get("fuzzy_match_ratio")
 
     # Set the global variables
     if local_timezone_config is not None:
@@ -275,6 +284,12 @@ def use_config_to_set_variables():
         if SONARR_INTEGRATION:
             print("No series_ids_mapping found in config.json, so the program will not be able to use Sonarr")
             SONARR_INTEGRATION = False
+
+    if fuzzy_match_ratio_config is not None:
+        FUZZY_MATCH_RATIO = int(fuzzy_match_ratio_config)
+    else:
+        print("No fuzzy_match_ratio found in config.json, using 85")
+        FUZZY_MATCH_RATIO = 85
 
     print(f"LOCAL_TIMEZONE: {LOCAL_TIMEZONE}")
     print(f"RECORDING_PATH: {RECORDING_PATH}")
