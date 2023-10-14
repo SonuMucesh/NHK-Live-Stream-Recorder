@@ -8,7 +8,6 @@ import os
 from pyarr import SonarrAPI
 
 # Global variables
-program_json = []
 time_to_sleep_till_next_program = 0
 programs_to_download = []
 cached_schedule = []
@@ -21,7 +20,7 @@ SERIES_IDS = []
 RECORDING_PATH = ""
 SONARR_URL = ""
 SONARR_API_KEY = ""
-SONARR_INTEGRATION = False
+SONARR_INTEGRATION = ""
 SERIES_IDS_MAPPING = {}
 FFMPEG_LOG_PATH = ""
 
@@ -47,9 +46,10 @@ def get_epg_now():
     global cached_schedule
     cached_schedule = json_response["channel"]["item"]
 
-    programs = [program for program in json_response["channel"]["item"]
-                if (SONARR_INTEGRATION and program["seriesId"] in SERIES_IDS_MAPPING.keys())
-                or (not SONARR_INTEGRATION and program["seriesId"] in SERIES_IDS)]
+    programs = [
+        program for program in json_response["channel"]["item"]
+        if program["seriesId"] in SERIES_IDS_MAPPING.keys() or program["seriesId"] in SERIES_IDS
+    ]
 
     if len(programs) == 0:
         print("No programs found from EPG")
@@ -66,10 +66,10 @@ def get_epg_now():
         main()
     else:
         print("Programs found from EPG")
-        print("Programs list from EPG: " + str(len(programs)) + "and current time is: " +
+        print("Programs list from EPG: " + str(len(programs)) + " and current time is: " +
               str(datetime.now(LOCAL_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")) + "\n")
         for program in programs:
-            if SONARR_INTEGRATION:
+            if SONARR_INTEGRATION == True:
                 sonarr(program)
             else:
                 store_programs_to_download(program)

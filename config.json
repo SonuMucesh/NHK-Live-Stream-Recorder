@@ -2,7 +2,7 @@
   "epg_url": "https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json",
   "local_timezone": "Europe/London",
   "recording_path": "/app/recordings",
-  "ffmpeg_log_path": "/app/ffmpeg.log",
+  "ffmpeg_log_path": "/app/logs/ffmpeg.log",
   "series_ids": ["2090"],
   "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
   "sonarr_integration": "True",

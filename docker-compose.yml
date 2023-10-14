@@ -8,4 +8,4 @@ services:
     volumes:
       - ./config.json:/app/config.json
       - ./recordings:/app/recordings
-      - ./logs/ffmpeg.log:/app/ffmpeg.log
+      - ./logs:/app/logs
