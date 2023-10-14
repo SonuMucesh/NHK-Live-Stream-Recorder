@@ -26,6 +26,10 @@ FFMPEG_LOG_PATH = ""
 
 
 def get_epg_now():
+    """
+    Get the current EPG and store the programs that match the series IDs in the global variable `programs_to_download`.
+    If no programs are found, sleep until the next program starts.
+    """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
         'Accept': '*/*',
@@ -41,13 +45,13 @@ def get_epg_now():
     }
 
     response = requests.get(EPG_URL, headers=headers)
-    json_response = response.json()
+    epg_json_response = response.json()
 
     global cached_schedule
-    cached_schedule = json_response["channel"]["item"]
+    cached_schedule = epg_json_response["channel"]["item"]
 
     programs = [
-        program for program in json_response["channel"]["item"]
+        program for program in epg_json_response["channel"]["item"]
         if program["seriesId"] in SERIES_IDS_MAPPING.keys() or program["seriesId"] in SERIES_IDS
     ]
 
@@ -59,15 +63,15 @@ def get_epg_now():
         current_time = datetime.now(LOCAL_TIMEZONE)
         global time_to_sleep_till_next_program
         time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
-        print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds then will call main() again"
-              + " current time: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S")) + " last item end time: " +
-              str(last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) + "\n")
+        print(f"Sleeping for: {time_to_sleep_till_next_program} seconds then will call main() again"
+              f" current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')} last item end time: " +
+              f"{last_item_end_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         time.sleep(time_to_sleep_till_next_program)
         main()
     else:
         print("Programs found from EPG")
-        print("Programs list from EPG: " + str(len(programs)) + " and current time is: " +
-              str(datetime.now(LOCAL_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")) + "\n")
+        print(f"Programs list from EPG: {len(programs)} and current time is: " +
+              f"{datetime.now(LOCAL_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')}\n")
         for program in programs:
             if SONARR_INTEGRATION == True:
                 sonarr(program)
@@ -76,7 +80,10 @@ def get_epg_now():
 
 
 def store_programs_to_download(program, sonarr_episode_name=None):
-    print("Program: " + json.dumps(program))
+    """
+    Store the program to download in the global variable `programs_to_download`.
+    """
+    print(f"Program: {json.dumps(program)}")
     print("Storing program to download")
     print("appending program to programs_to_download")
     program_dict = {
@@ -89,11 +96,14 @@ def store_programs_to_download(program, sonarr_episode_name=None):
         "sonarr_episode_name": sonarr_episode_name
     }
     programs_to_download.append(program_dict)
-    print("Programs to download stored: " + str(len(programs_to_download)) + "\n")
+    print(f"Programs to download stored: {len(programs_to_download)}\n")
 
 
 def download_video(program):
-    print("Downloading for: " + str(program["duration"]) + " seconds")
+    """
+    Download the video for the given program.
+    """
+    print(f"Downloading for: {program['duration']} seconds")
     time_to_download = int(program["duration"])
     currentYear = datetime.now().year
     currentDay = datetime.now().day
@@ -125,12 +135,15 @@ def download_video(program):
     # Wait for the process to finish
     process.wait()
 
-    print("Download finished for: " + filename)
+    print(f"Download finished for: {filename}")
     programs_to_download.remove(program)
-    print("Programs to download left: " + str(len(programs_to_download)) + "\n")
+    print(f"Programs to download left: {len(programs_to_download)}\n")
 
 
 def sonarr(program):
+    """
+    Check if the program is available on Sonarr and store the program to download with the correct episode name.
+    """
     epg_program_sub_title = program["subtitle"]
     epg_air_date = program["pubDate"]
     nhk_series_id = program["seriesId"]
@@ -151,14 +164,14 @@ def sonarr(program):
 
         if episode['title'] == epg_program_sub_title:
             print("Program from EPG:")
-            print("title: " + epg_program_sub_title)
-            print("with non-converted air date: " + epg_air_date)
-            print("with converted air date: " + start_time_utc.strftime("%Y-%m-%d") + "\n")
+            print(f"title: {epg_program_sub_title}")
+            print(f"with non-converted air date: {epg_air_date}")
+            print(f"with converted air date: {start_time_utc.strftime('%Y-%m-%d')}\n")
 
             print("Program from Sonarr:")
-            print("title: " + episode['title'])
-            print("non-converted air date: " + episode['airDateUtc'])
-            print("converted air date: " + sonarr_date.strftime("%Y-%m-%d") + "\n")
+            print(f"title: {episode['title']}")
+            print(f"non-converted air date: {episode['airDateUtc']}")
+            print(f"converted air date: {sonarr_date.strftime('%Y-%m-%d')}\n")
 
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
@@ -166,6 +179,10 @@ def sonarr(program):
 
 
 def check_if_duplicate(series, episode):
+    """
+    Check if the episode has already been downloaded.
+    If it hasn't, return the episode title.
+    """
     if episode['hasFile']:
         print("The episode has already been downloaded.")
         return False
@@ -173,11 +190,14 @@ def check_if_duplicate(series, episode):
         print("The episode has not been downloaded.")
         episode_title = series['title'] + " - " + str(episode['seasonNumber']) + "x" \
                         + str(episode['episodeNumber']) + " - " + episode['title']
-        print("Episode title: " + episode_title + "\n")
+        print(f"Episode title: {episode_title}\n")
         return episode_title
 
 
 def use_config_to_set_variables():
+    """
+    Use the `config.json` file to set the global variables.
+    """
     global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL, SONARR_INTEGRATION, \
         SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING, FFMPEG_LOG_PATH
     with open("config.json") as config_file:
@@ -251,20 +271,23 @@ def use_config_to_set_variables():
             print("No series_ids_mapping found in config.json, so the program will not be able to use Sonarr")
             SONARR_INTEGRATION = False
 
-    print("LOCAL_TIMEZONE: " + str(LOCAL_TIMEZONE))
-    print("RECORDING_PATH: " + str(RECORDING_PATH))
-    print("FFMPEG_LOG_PATH: " + str(FFMPEG_LOG_PATH))
-    print("SERIES_IDS: " + str(SERIES_IDS))
-    print("EPG_URL: " + str(EPG_URL))
-    print("LIVESTREAM_URL: " + str(LIVESTREAM_URL))
-    print("SONARR_INTEGRATION: " + str(SONARR_INTEGRATION))
-    print("SONARR_URL: " + str(SONARR_URL))
-    print("SONARR_API_KEY: " + "REDACTED")
-    print("SERIES_IDS_MAPPING: " + str(SERIES_IDS_MAPPING) + "\n")
+    print(f"LOCAL_TIMEZONE: {LOCAL_TIMEZONE}")
+    print(f"RECORDING_PATH: {RECORDING_PATH}")
+    print(f"FFMPEG_LOG_PATH: {FFMPEG_LOG_PATH}")
+    print(f"SERIES_IDS: {SERIES_IDS}")
+    print(f"EPG_URL: {EPG_URL}")
+    print(f"LIVESTREAM_URL: {LIVESTREAM_URL}")
+    print(f"SONARR_INTEGRATION: {SONARR_INTEGRATION}")
+    print(f"SONARR_URL: {SONARR_URL}")
+    print("SONARR_API_KEY: REDACTED")
+    print(f"SERIES_IDS_MAPPING: {SERIES_IDS_MAPPING}\n")
     return True
 
 
 def main():
+    """
+    The main function that runs the program.
+    """
     # Check if the config.json file exists and if it does, use it to set the variables
     if use_config_to_set_variables() is False:
         return False
@@ -298,16 +321,16 @@ def main():
         program["duration"] = int((end_time_local - start_time_local).total_seconds())
 
         if time_to_sleep_till_next_program > 0:
-            print(program["title"] + " starts at: " + str(start_time_local.strftime("%Y-%m-%d %H:%M:%S")) +
-                  " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S") + " with duration: " +
-                                                 str(program["duration"]) + " seconds"))
-            print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds" + "\n")
+            print(f"{program['title']} starts at: {start_time_local.strftime('%Y-%m-%d %H:%M:%S')} "
+                  f"and current time is: {current_time.strftime('%Y-%m-%d %H:%M:%S')} with duration: "
+                  f"{program['duration']} seconds")
+            print(f"Sleeping for: {time_to_sleep_till_next_program} seconds\n")
             time.sleep(time_to_sleep_till_next_program)
         if time_to_sleep_till_next_program < 0:
-            print(program["title"] + " started at: " + str(start_time_local.strftime("%Y-%m-%d %H:%M:%S")) +
-                  " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S") + " with duration: " +
-                                                 str(program["duration"]) + " seconds"))
-            print("Skipping program" + "\n")
+            print(f"{program['title']} started at: {start_time_local.strftime('%Y-%m-%d %H:%M:%S')} "
+                  f"and current time is: {current_time.strftime('%Y-%m-%d %H:%M:%S')} with duration: "
+                  f"{program['duration']} seconds")
+            print("Skipping program\n")
             programs_to_download.remove(program)
             continue
 
@@ -315,8 +338,8 @@ def main():
 
     if len(programs_to_download) == 0:
         current_time = datetime.now(LOCAL_TIMEZONE)
-        print("No more programs to download at the end of main() and current time is: " +
-              str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
+        print(f"No more programs to download at the end of main() and current time is: "
+              f"{current_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
         last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).replace(tzinfo=pytz.UTC).astimezone(
@@ -326,11 +349,11 @@ def main():
         # Check if the last item in the schedule has ended and if it hasn't, sleep until it has
         if last_item_end_time > current_time:
             time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
-            print("Last item in the schedule has not ended yet with end time: " + str(
-                last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) +
-                  " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
-            print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds and current time is: " +
-                  str(current_time.strftime("%Y-%m-%d %H:%M:%S")) + "\n")
+            print("Last item in the schedule has not ended yet with end time: " +
+                  f"{last_item_end_time.strftime('%Y-%m-%d %H:%M:%S')} and current time is: "
+                  f"{current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Sleeping for: {time_to_sleep_till_next_program} seconds and current time is: "
+                  f"{current_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
             time.sleep(time_to_sleep_till_next_program)
         main()
 
