@@ -23,6 +23,7 @@ SONARR_URL = ""
 SONARR_API_KEY = ""
 SONARR_INTEGRATION = False
 SERIES_IDS_MAPPING = {}
+FFMPEG_LOG_PATH = ""
 
 
 def get_epg_now():
@@ -117,8 +118,9 @@ def download_video(program):
     process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                universal_newlines=True)
 
-    for line in process.stdout:
-        print(line, end="")
+    with open(FFMPEG_LOG_PATH, "a") as file:  # Open the file in append mode
+        for line in process.stdout:
+            file.write(line)
 
     # Wait for the process to finish
     process.wait()
@@ -177,7 +179,7 @@ def check_if_duplicate(series, episode):
 
 def use_config_to_set_variables():
     global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL, SONARR_INTEGRATION, \
-        SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING
+        SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING, FFMPEG_LOG_PATH
     with open("config.json") as config_file:
         config = json.load(config_file)
 
@@ -191,6 +193,7 @@ def use_config_to_set_variables():
     sonarr_url_config = config.get("sonarr_url")
     sonarr_api_key_config = config.get("sonarr_api_key")
     series_ids_mapping_config = config.get("series_ids_mapping")
+    ffmpeg_log_path_config = config.get("ffmpeg_log_path")
 
     # Set the global variables
     if local_timezone_config is not None:
@@ -203,6 +206,12 @@ def use_config_to_set_variables():
     else:
         print("No output_path found in config.json, using recordings")
         RECORDING_PATH = os.path.join(os.getcwd(), "recordings")
+
+    if ffmpeg_log_path_config is not None:
+        FFMPEG_LOG_PATH = ffmpeg_log_path_config
+    else:
+        print("No ffmpeg_log_path found in config.json, using ffmpeg.log")
+        FFMPEG_LOG_PATH = os.path.join(os.getcwd(), "ffmpeg.log")
 
     if series_ids_list_config is not None:
         SERIES_IDS = series_ids_list_config
@@ -244,13 +253,14 @@ def use_config_to_set_variables():
 
     print("LOCAL_TIMEZONE: " + str(LOCAL_TIMEZONE))
     print("RECORDING_PATH: " + str(RECORDING_PATH))
+    print("FFMPEG_LOG_PATH: " + str(FFMPEG_LOG_PATH))
     print("SERIES_IDS: " + str(SERIES_IDS))
     print("EPG_URL: " + str(EPG_URL))
     print("LIVESTREAM_URL: " + str(LIVESTREAM_URL))
     print("SONARR_INTEGRATION: " + str(SONARR_INTEGRATION))
     print("SONARR_URL: " + str(SONARR_URL))
     print("SONARR_API_KEY: " + "REDACTED")
-    print("SERIES_IDS_MAPPING: " + str(SERIES_IDS_MAPPING))
+    print("SERIES_IDS_MAPPING: " + str(SERIES_IDS_MAPPING) + "\n")
     return True
 
 
