@@ -46,7 +46,9 @@ def get_epg_now():
     global cached_schedule
     cached_schedule = json_response["channel"]["item"]
 
-    programs = [program for program in json_response["channel"]["item"] if program["seriesId"] in SERIES_IDS]
+    programs = [program for program in json_response["channel"]["item"]
+                if (SONARR_INTEGRATION and program["seriesId"] in SERIES_IDS_MAPPING.keys())
+                or (not SONARR_INTEGRATION and program["seriesId"] in SERIES_IDS)]
 
     if len(programs) == 0:
         print("No programs found from EPG")
@@ -95,11 +97,13 @@ def download_video(program):
     currentYear = datetime.now().year
     currentDay = datetime.now().day
 
-    filename = f"{program['title']} - {currentYear}x{currentDay}.mp4"
-    if program["subtitle"] != "":
-        filename = f"{program['title']} - {currentYear}x{currentDay} - {program['subtitle']}.mp4"
     if program["sonarr_episode_name"] is not None:
         filename = f"{program['sonarr_episode_name']}.mp4"
+    elif program["subtitle"] != "":
+        filename = f"{program['title']} - {currentYear}x{currentDay} - {program['subtitle']}.mp4"
+    else:
+        filename = f"{program['title']} - {currentYear}x{currentDay}.mp4"
+
     output_file = os.path.join(RECORDING_PATH, filename)
     ffmpeg_command = [
         "ffmpeg",
@@ -220,15 +224,11 @@ def use_config_to_set_variables():
 
     if sonarr_integration_config is not None:
         SONARR_INTEGRATION = sonarr_integration_config
-        if SONARR_URL is None:
-            print("No sonarr_url found in config.json, so the program will not be able to use Sonarr")
+        if SONARR_URL is None or SONARR_API_KEY is None:
+            print("No sonarr_url or sonarr_api_key found in config.json, so the program will not be able to use Sonarr")
             SONARR_INTEGRATION = False
         else:
             SONARR_URL = sonarr_url_config
-        if SONARR_API_KEY is None:
-            print("No sonarr_api_key found in config.json, so the program will not be able to use Sonarr")
-            SONARR_INTEGRATION = False
-        else:
             SONARR_API_KEY = sonarr_api_key_config
     else:
         print("No sonarr_integration found in config.json, so the program will not be able to use Sonarr")
