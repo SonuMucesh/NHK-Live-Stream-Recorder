@@ -165,7 +165,11 @@ def sonarr(program):
     episodes = SonarrAPI.get_episode(self=sonarrApi, id_=series_id, series=True)
 
     for episode in episodes:
-        sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
+        try:
+            sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
+        except KeyError:
+            sonarr_date = datetime.now().astimezone(pytz.UTC).date()
+
         ratio = fuzzy_match(program, episode)
 
         if ratio > FUZZY_MATCH_RATIO:
@@ -198,7 +202,7 @@ def check_if_duplicate(series, episode):
     """
     if episode['hasFile']:
         print("The episode has already been downloaded.")
-        print(f"Episode from Sonarr: {episode}")
+        print(f"Episode from Sonarr: {episode}\n")
         return False
     else:
         print("The episode has not been downloaded.")
