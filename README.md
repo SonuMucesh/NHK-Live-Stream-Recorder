@@ -50,7 +50,8 @@ sudo apt-get install ffmpeg
   "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
   "sonarr_integration": "True", --> This is the Sonarr integration, if you want to use it, set it to True
   "sonarr_url": "YOUR_SONARR_URL", 
-  "sonarr_api_key": "YOUR_SONARR_API_KEY", --> You can find your Sonarr API key in Settings > General
+  "sonarr_api_key": "YOUR_SONARR_API_KEY", --> You can find your Sonarr API key in Settings > General,
+  "fuzzy_match_ratio": "85", --> This is the fuzzy match ratio, the higher the number the more accurate the match will be but it will also be more strict
   "series_ids_mapping": [
      --> This mapping allows us to compare episodes on Sonarr and EPG you can use this or series_ids or both.
          However only series_ids_mapping will work with Sonarr integration
