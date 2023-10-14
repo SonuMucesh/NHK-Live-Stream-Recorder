@@ -165,29 +165,61 @@ def sonarr(program):
     episodes = SonarrAPI.get_episode(self=sonarrApi, id_=series_id, series=True)
 
     for episode in episodes:
+        sonarr_date = None
         try:
-            sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
-        except KeyError:
-            sonarr_date = datetime.now().astimezone(pytz.UTC).date()
+            sonarr_date = datetime.strptime(episode.get('airDateUtc', ''),
+                                            '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
+        except ValueError:
+            pass
 
-        ratio = fuzzy_match(program, episode)
-
-        if ratio > FUZZY_MATCH_RATIO:
-            print("Program from EPG:")
-            print(f"title: {epg_program_sub_title}")
-            print(f"with non-converted air date: {epg_air_date}")
-            print(f"with converted air date: {start_time_utc.strftime('%Y-%m-%d')}\n")
-
-            print("Program from Sonarr:")
-            print(f"title: {episode['title']}")
-            print(f"non-converted air date: {episode['airDateUtc']}")
-            print(f"converted air date: {sonarr_date.strftime('%Y-%m-%d')}\n")
-
+        if sonarr_date == start_time_utc:
+            print_sonarr_and_epg_episode_info(
+                epg_program_sub_title=epg_program_sub_title,
+                epg_air_date=epg_air_date,
+                epg_converted_air_date=start_time_utc,
+                sonarr_episode_title=episode['title'],
+                sonarr_air_date=episode.get('airDateUtc', ''),
+                converted_sonarr_air_date=sonarr_date
+            )
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
             elif episode_title is not False:
                 store_programs_to_download(program)
+            return
+
+        ratio = fuzzy_match(program, episode)
+
+        if ratio > FUZZY_MATCH_RATIO:
+            print_sonarr_and_epg_episode_info(
+                epg_program_sub_title=epg_program_sub_title,
+                epg_air_date=epg_air_date,
+                epg_converted_air_date=start_time_utc,
+                sonarr_episode_title=episode['title'],
+                sonarr_air_date=episode.get('airDateUtc', ''),
+                converted_sonarr_air_date=sonarr_date
+            )
+            episode_title = check_if_duplicate(series, episode)
+            if episode_title:
+                store_programs_to_download(program, episode_title)
+            elif episode_title is not False:
+                store_programs_to_download(program)
+
+
+def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_converted_air_date, sonarr_episode_title,
+                                      sonarr_air_date, converted_sonarr_air_date):
+    """
+    Print the episode information from Sonarr and the EPG.
+    """
+    print("Program from EPG:")
+    print(f"title: {epg_program_sub_title}")
+    print(f"with non-converted air date: {epg_air_date}")
+    print(f"with converted air date: {epg_converted_air_date.strftime('%Y-%m-%d')}\n")
+
+    print("Program from Sonarr:")
+    print(f"title: {sonarr_episode_title}")
+    print(f"non-converted air date: {sonarr_air_date}")
+    print(f"converted air date: {converted_sonarr_air_date.strftime('%Y-%m-%d')}\n")
 
 
 def fuzzy_match(program, episode):
