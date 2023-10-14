@@ -118,7 +118,7 @@ def download_video(program):
     process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                universal_newlines=True)
 
-    with open(FFMPEG_LOG_PATH, "a") as file:  # Open the file in append mode
+    with open(FFMPEG_LOG_PATH, "a+") as file:  # Open the file in append mode
         for line in process.stdout:
             file.write(line)
 
