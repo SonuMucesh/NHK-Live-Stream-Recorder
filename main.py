@@ -23,6 +23,19 @@ SONARR_API_KEY = ""
 SONARR_INTEGRATION = ""
 SERIES_IDS_MAPPING = {}
 FFMPEG_LOG_PATH = ""
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
+    'Accept': '*/*',
+    'Accept-Language': 'en-GB,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Referer': 'https://www3.nhk.or.jp/',
+    'Origin': 'https://www3.nhk.or.jp',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'cross-site'
+}
 
 
 def get_epg_now():
@@ -30,21 +43,7 @@ def get_epg_now():
     Get the current EPG and store the programs that match the series IDs in the global variable `programs_to_download`.
     If no programs are found, sleep until the next program starts.
     """
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0',
-        'Accept': '*/*',
-        'Accept-Language': 'en-GB,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Referer': 'https://www3.nhk.or.jp/',
-        'Origin': 'https://www3.nhk.or.jp',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'cross-site'
-    }
-
-    response = requests.get(EPG_URL, headers=headers)
+    response = requests.get(EPG_URL, headers=HEADERS)
     epg_json_response = response.json()
 
     global cached_schedule
@@ -73,7 +72,7 @@ def get_epg_now():
         print(f"Programs list from EPG: {len(programs)} and current time is: " +
               f"{datetime.now(LOCAL_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')}\n")
         for program in programs:
-            if SONARR_INTEGRATION == True:
+            if SONARR_INTEGRATION:
                 sonarr(program)
             else:
                 store_programs_to_download(program)
@@ -147,6 +146,11 @@ def sonarr(program):
     epg_program_sub_title = program["subtitle"]
     epg_air_date = program["pubDate"]
     nhk_series_id = program["seriesId"]
+
+    if nhk_series_id not in SERIES_IDS_MAPPING.keys():
+        store_programs_to_download(program)
+        return
+
     tv_db_series_id = SERIES_IDS_MAPPING[nhk_series_id]
 
     start_time_seconds = int(epg_air_date) // 1000
@@ -157,7 +161,6 @@ def sonarr(program):
     series = SonarrAPI.get_series(self=sonarrApi, id_=tv_db_series_id, tvdb=True)[-1]
     series_id = SonarrAPI.get_series(self=sonarrApi, id_=tv_db_series_id, tvdb=True)[-1]['id']
     episodes = SonarrAPI.get_episode(self=sonarrApi, id_=series_id, series=True)
-    episodes = episodes[-1:]
 
     for episode in episodes:
         sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
@@ -176,6 +179,8 @@ def sonarr(program):
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
+            else:
+                store_programs_to_download(program)
 
 
 def check_if_duplicate(series, episode):
@@ -185,6 +190,7 @@ def check_if_duplicate(series, episode):
     """
     if episode['hasFile']:
         print("The episode has already been downloaded.")
+        print(f"Episode from Sonarr: {episode}")
         return False
     else:
         print("The episode has not been downloaded.")
@@ -251,7 +257,7 @@ def use_config_to_set_variables():
         return False
 
     if sonarr_integration_config is not None:
-        SONARR_INTEGRATION = sonarr_integration_config
+        SONARR_INTEGRATION = bool(sonarr_integration_config)
         if SONARR_URL is None or SONARR_API_KEY is None:
             print("No sonarr_url or sonarr_api_key found in config.json, so the program will not be able to use Sonarr")
             SONARR_INTEGRATION = False
@@ -325,6 +331,7 @@ def main():
                   f"{program['duration']} seconds")
             print(f"Sleeping for: {time_to_sleep_till_next_program} seconds\n")
             time.sleep(time_to_sleep_till_next_program)
+
         if time_to_sleep_till_next_program < 0:
             print(f"{program['title']} started at: {start_time_local.strftime('%Y-%m-%d %H:%M:%S')} "
                   f"and current time is: {current_time.strftime('%Y-%m-%d %H:%M:%S')} with duration: "
