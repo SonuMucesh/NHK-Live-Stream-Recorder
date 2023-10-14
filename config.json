@@ -3,5 +3,22 @@
   "local_timezone": "Europe/London",
   "recording_path": "/app/recordings",
   "series_ids": ["4026","2066","4017","2105"],
-  "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8"
+  "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
+  "sonarr_integration": "True",
+  "sonarr_url": "YOUR_SONARR_URL",
+  "sonarr_api_key": "YOUR_SONARR_API_KEY",
+  "series_ids_mapping": [
+    {
+      "nhk_series_id": "4026",
+      "tv_db_id": "323119"
+    },
+    {
+      "nhk_series_id": "2066",
+      "tv_db_id": "329370"
+    },
+    {
+      "nhk_series_id": "4017",
+      "tv_db_id": "338223"
+    }
+  ]
 }

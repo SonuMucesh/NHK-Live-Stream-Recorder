@@ -5,6 +5,7 @@ from datetime import datetime
 import pytz
 import time
 import os
+from pyarr import SonarrAPI
 
 # Global variables
 program_json = []
@@ -18,6 +19,10 @@ EPG_URL = ""
 LIVESTREAM_URL = ""
 SERIES_IDS = []
 RECORDING_PATH = ""
+SONARR_URL = ""
+SONARR_API_KEY = ""
+SONARR_INTEGRATION = False
+SERIES_IDS_MAPPING = {}
 
 
 def get_epg_now():
@@ -46,7 +51,7 @@ def get_epg_now():
     if len(programs) == 0:
         print("No programs found from EPG")
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
-        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time)\
+        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time) \
             .replace(tzinfo=pytz.UTC).astimezone(LOCAL_TIMEZONE)
         current_time = datetime.now(LOCAL_TIMEZONE)
         global time_to_sleep_till_next_program
@@ -61,10 +66,13 @@ def get_epg_now():
         print("Programs list from EPG: " + str(len(programs)) + "and current time is: " +
               str(datetime.now(LOCAL_TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")) + "\n")
         for program in programs:
-            store_programs_to_download(program)
+            if SONARR_INTEGRATION:
+                sonarr(program)
+            else:
+                store_programs_to_download(program)
 
 
-def store_programs_to_download(program):
+def store_programs_to_download(program, sonarr_episode_name=None):
     print("Program: " + json.dumps(program))
     print("Storing program to download")
     print("appending program to programs_to_download")
@@ -74,7 +82,8 @@ def store_programs_to_download(program):
         "start_time": program["pubDate"],
         "end_time": program["endDate"],
         "description": program["description"],
-        "duration": None
+        "duration": None,
+        "sonarr_episode_name": sonarr_episode_name
     }
     programs_to_download.append(program_dict)
     print("Programs to download stored: " + str(len(programs_to_download)) + "\n")
@@ -89,6 +98,8 @@ def download_video(program):
     filename = f"{program['title']} - {currentYear}x{currentDay}.mp4"
     if program["subtitle"] != "":
         filename = f"{program['title']} - {currentYear}x{currentDay} - {program['subtitle']}.mp4"
+    if program["sonarr_episode_name"] is not None:
+        filename = f"{program['sonarr_episode_name']}.mp4"
     output_file = os.path.join(RECORDING_PATH, filename)
     ffmpeg_command = [
         "ffmpeg",
@@ -113,8 +124,56 @@ def download_video(program):
     print("Programs to download left: " + str(len(programs_to_download)) + "\n")
 
 
+def sonarr(program):
+    epg_program_sub_title = program["subtitle"]
+    epg_air_date = program["pubDate"]
+    nhk_series_id = program["seriesId"]
+    tv_db_series_id = SERIES_IDS_MAPPING[nhk_series_id]
+
+    start_time_seconds = int(epg_air_date) // 1000
+    start_time_utc = datetime.utcfromtimestamp(start_time_seconds).replace(tzinfo=pytz.UTC).date()
+
+    sonarrApi = SonarrAPI(SONARR_URL, SONARR_API_KEY)
+
+    series = SonarrAPI.get_series(self=sonarrApi, id_=tv_db_series_id, tvdb=True)[-1]
+    series_id = SonarrAPI.get_series(self=sonarrApi, id_=tv_db_series_id, tvdb=True)[-1]['id']
+    episodes = SonarrAPI.get_episode(self=sonarrApi, id_=series_id, series=True)
+    episodes = episodes[-1:]
+
+    for episode in episodes:
+        sonarr_date = datetime.strptime(episode['airDateUtc'], '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
+
+        if episode['title'] == epg_program_sub_title:
+            print("Program from EPG:")
+            print("title: " + epg_program_sub_title)
+            print("with non-converted air date: " + epg_air_date)
+            print("with converted air date: " + start_time_utc.strftime("%Y-%m-%d") + "\n")
+
+            print("Program from Sonarr:")
+            print("title: " + episode['title'])
+            print("non-converted air date: " + episode['airDateUtc'])
+            print("converted air date: " + sonarr_date.strftime("%Y-%m-%d") + "\n")
+
+            episode_title = check_if_duplicate(series, episode)
+            if episode_title:
+                store_programs_to_download(program, episode_title)
+
+
+def check_if_duplicate(series, episode):
+    if episode['hasFile']:
+        print("The episode has already been downloaded.")
+        return False
+    else:
+        print("The episode has not been downloaded.")
+        episode_title = series['title'] + " - " + str(episode['seasonNumber']) + "x" \
+                        + str(episode['episodeNumber']) + " - " + episode['title']
+        print("Episode title: " + episode_title + "\n")
+        return episode_title
+
+
 def use_config_to_set_variables():
-    global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL
+    global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL, SONARR_INTEGRATION, \
+        SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING
     with open("config.json") as config_file:
         config = json.load(config_file)
 
@@ -124,6 +183,10 @@ def use_config_to_set_variables():
     series_ids_list_config = config.get("series_ids")
     epg_url_config = config.get("epg_url")
     livestream_url_config = config.get("livestream_url")
+    sonarr_integration_config = config.get("sonarr_integration")
+    sonarr_url_config = config.get("sonarr_url")
+    sonarr_api_key_config = config.get("sonarr_api_key")
+    series_ids_mapping_config = config.get("series_ids_mapping")
 
     # Set the global variables
     if local_timezone_config is not None:
@@ -155,11 +218,39 @@ def use_config_to_set_variables():
         print("No livestream_url found in config.json, so the program will not be able to get the livestream")
         return False
 
+    if sonarr_integration_config is not None:
+        SONARR_INTEGRATION = sonarr_integration_config
+        if SONARR_URL is None:
+            print("No sonarr_url found in config.json, so the program will not be able to use Sonarr")
+            SONARR_INTEGRATION = False
+        else:
+            SONARR_URL = sonarr_url_config
+        if SONARR_API_KEY is None:
+            print("No sonarr_api_key found in config.json, so the program will not be able to use Sonarr")
+            SONARR_INTEGRATION = False
+        else:
+            SONARR_API_KEY = sonarr_api_key_config
+    else:
+        print("No sonarr_integration found in config.json, so the program will not be able to use Sonarr")
+        SONARR_INTEGRATION = False
+
+    if series_ids_mapping_config is not None:
+        for series_id_mapping in series_ids_mapping_config:
+            SERIES_IDS_MAPPING[series_id_mapping['nhk_series_id']] = series_id_mapping['tv_db_id']
+    else:
+        if SONARR_INTEGRATION:
+            print("No series_ids_mapping found in config.json, so the program will not be able to use Sonarr")
+            SONARR_INTEGRATION = False
+
     print("LOCAL_TIMEZONE: " + str(LOCAL_TIMEZONE))
     print("RECORDING_PATH: " + str(RECORDING_PATH))
     print("SERIES_IDS: " + str(SERIES_IDS))
     print("EPG_URL: " + str(EPG_URL))
-    print("LIVESTREAM_URL: " + str(LIVESTREAM_URL) + "\n")
+    print("LIVESTREAM_URL: " + str(LIVESTREAM_URL))
+    print("SONARR_INTEGRATION: " + str(SONARR_INTEGRATION))
+    print("SONARR_URL: " + str(SONARR_URL))
+    print("SONARR_API_KEY: " + "REDACTED")
+    print("SERIES_IDS_MAPPING: " + str(SERIES_IDS_MAPPING))
     return True
 
 
@@ -218,13 +309,15 @@ def main():
               str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
 
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
-        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).replace(tzinfo=pytz.UTC).astimezone(LOCAL_TIMEZONE)
+        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time).replace(tzinfo=pytz.UTC).astimezone(
+            LOCAL_TIMEZONE)
         current_time = datetime.now(LOCAL_TIMEZONE)
 
         # Check if the last item in the schedule has ended and if it hasn't, sleep until it has
         if last_item_end_time > current_time:
             time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
-            print("Last item in the schedule has not ended yet with end time: " + str(last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) +
+            print("Last item in the schedule has not ended yet with end time: " + str(
+                last_item_end_time.strftime("%Y-%m-%d %H:%M:%S")) +
                   " and current time is: " + str(current_time.strftime("%Y-%m-%d %H:%M:%S")))
             print("Sleeping for: " + str(time_to_sleep_till_next_program) + " seconds and current time is: " +
                   str(current_time.strftime("%Y-%m-%d %H:%M:%S")) + "\n")
