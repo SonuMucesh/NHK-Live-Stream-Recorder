@@ -58,23 +58,35 @@ def get_epg_now():
 
     if len(programs) == 0:
         print("No programs found from EPG")
+
         last_item_end_time = int(cached_schedule[-1]["endDate"]) // 1000
-        last_item_end_time = datetime.utcfromtimestamp(last_item_end_time) \
-            .replace(tzinfo=pytz.UTC).astimezone(LOCAL_TIMEZONE)
+        last_item_end_time = (
+            datetime.utcfromtimestamp(last_item_end_time)
+            .replace(tzinfo=pytz.UTC)
+            .astimezone(LOCAL_TIMEZONE)
+        )
+
         current_time = datetime.now(LOCAL_TIMEZONE)
+
         global time_to_sleep_till_next_program
         time_to_sleep_till_next_program = int((last_item_end_time - current_time).total_seconds())
-        print(f"Sleeping for: {time_to_sleep_till_next_program} seconds then will call main() again"
-              f" current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')} last item end time: " +
-              f"{last_item_end_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+        print(
+            f"Sleeping for: {time_to_sleep_till_next_program} seconds, then will call main() again."
+            f" Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}, last item end time: "
+            f"{last_item_end_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
+
         time.sleep(time_to_sleep_till_next_program)
         main()
     else:
-        print("Programs found from EPG")
-        print(f"Programs list from EPG: {len(programs)} and current time is: " +
-              f"{datetime.now(LOCAL_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')}\n")
+        print(
+            f"Programs list from EPG: {len(programs)} and current time is: "
+            f"{datetime.now(LOCAL_TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
+
         for program in programs:
-            if SONARR_INTEGRATION:
+            if SONARR_INTEGRATION and program["seriesId"] in SERIES_IDS_MAPPING.keys():
                 sonarr(program)
             else:
                 store_programs_to_download(program)
@@ -86,7 +98,8 @@ def store_programs_to_download(program, sonarr_episode_name=None):
     """
     print(f"Program: {json.dumps(program)}")
     print("Storing program to download")
-    print("appending program to programs_to_download")
+    print("Appending program to programs_to_download")
+
     program_dict = {
         "title": program["title"],
         "subtitle": program["subtitle"],
@@ -96,7 +109,11 @@ def store_programs_to_download(program, sonarr_episode_name=None):
         "duration": None,
         "sonarr_episode_name": sonarr_episode_name
     }
-    programs_to_download.append(program_dict)
+
+    # Check if the program is already in the list
+    if program_dict not in programs_to_download:
+        programs_to_download.append(program_dict)
+
     print(f"Programs to download stored: {len(programs_to_download)}\n")
 
 
@@ -106,15 +123,15 @@ def download_video(program):
     """
     print(f"Downloading for: {program['duration']} seconds")
     time_to_download = int(program["duration"])
-    currentYear = datetime.now().year
-    currentDay = datetime.now().day
+    current_year = datetime.now().year
+    current_day = datetime.now().day
 
     if program["sonarr_episode_name"] is not None:
         filename = f"{program['sonarr_episode_name']}.mp4"
     elif program["subtitle"] != "":
-        filename = f"{program['title']} - {currentYear}x{currentDay} - {program['subtitle']}.mp4"
+        filename = f"{program['title']} - {current_year}x{current_day} - {program['subtitle']}.mp4"
     else:
-        filename = f"{program['title']} - {currentYear}x{currentDay}.mp4"
+        filename = f"{program['title']} - {current_year}x{current_day}.mp4"
 
     output_file = os.path.join(RECORDING_PATH, filename)
     ffmpeg_command = [
@@ -126,14 +143,17 @@ def download_video(program):
         output_file
     ]
 
-    process = subprocess.Popen(ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               universal_newlines=True)
+    process = subprocess.Popen(
+        ffmpeg_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True
+    )
 
-    with open(FFMPEG_LOG_PATH, "a+") as file:  # Open the file in append mode
+    with open(FFMPEG_LOG_PATH, "a+") as file:
         for line in process.stdout:
             file.write(line)
 
-    # Wait for the process to finish
     process.wait()
 
     print(f"Download finished for: {filename}")
@@ -149,10 +169,6 @@ def sonarr(program):
     epg_air_date = program["pubDate"]
     nhk_series_id = program["seriesId"]
 
-    if nhk_series_id not in SERIES_IDS_MAPPING.keys():
-        store_programs_to_download(program)
-        return
-
     tv_db_series_id = SERIES_IDS_MAPPING[nhk_series_id]
 
     start_time_seconds = int(epg_air_date) // 1000
@@ -167,39 +183,23 @@ def sonarr(program):
     for episode in episodes:
         sonarr_date = None
         try:
-            sonarr_date = datetime.strptime(episode.get('airDateUtc', ''),
-                                            '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
-        except ValueError:
-            print(f"Could not convert {episode.get('airDateUtc', '')} to datetime object defaulting to now")
-            sonarr_date = datetime.now(pytz.UTC).date()
+            sonarr_date = datetime.strptime(episode.get('airDateUtc', ''), '%Y-%m-%dT%H:%M:%S%z').astimezone(
+                pytz.UTC).date()
+        except Exception as e:
+            print(f"Error: {e}\n")
 
-        if sonarr_date == start_time_utc:
-            print_sonarr_and_epg_episode_info(
-                epg_program_sub_title=epg_program_sub_title,
-                epg_air_date=epg_air_date,
-                epg_converted_air_date=start_time_utc,
-                sonarr_episode_title=episode['title'],
-                sonarr_air_date=episode.get('airDateUtc', ''),
-                converted_sonarr_air_date=sonarr_date
-            )
-            episode_title = check_if_duplicate(series, episode)
-            if episode_title:
-                store_programs_to_download(program, episode_title)
-            elif episode_title is not False:
-                store_programs_to_download(program)
-            return
+        episode_info = {
+            'epg_program_sub_title': epg_program_sub_title,
+            'epg_air_date': epg_air_date,
+            'epg_converted_air_date': start_time_utc,
+            'sonarr_episode_title': episode['title'],
+            'sonarr_air_date': episode.get('airDateUtc', ''),
+            'converted_sonarr_air_date': sonarr_date
+        }
 
-        ratio = fuzzy_match(program, episode)
-
-        if ratio > FUZZY_MATCH_RATIO:
-            print_sonarr_and_epg_episode_info(
-                epg_program_sub_title=epg_program_sub_title,
-                epg_air_date=epg_air_date,
-                epg_converted_air_date=start_time_utc,
-                sonarr_episode_title=episode['title'],
-                sonarr_air_date=episode.get('airDateUtc', ''),
-                converted_sonarr_air_date=sonarr_date
-            )
+        if (sonarr_date is not None and sonarr_date == start_time_utc) \
+                or fuzzy_match(program, episode) > FUZZY_MATCH_RATIO:
+            print_sonarr_and_epg_episode_info(**episode_info)
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
@@ -208,7 +208,7 @@ def sonarr(program):
 
 
 def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_converted_air_date, sonarr_episode_title,
-                                      sonarr_air_date, converted_sonarr_air_date):
+                                      sonarr_air_date, converted_sonarr_air_date, fuzzy_match_ratio=None):
     """
     Print the episode information from Sonarr and the EPG.
     """
@@ -221,6 +221,12 @@ def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_c
     print(f"title: {sonarr_episode_title}")
     print(f"non-converted air date: {sonarr_air_date}")
     print(f"converted air date: {converted_sonarr_air_date.strftime('%Y-%m-%d')}\n")
+
+    if fuzzy_match_ratio is not None:
+        print(
+            f"Fuzzy ratio between names: {fuzzy_match_ratio} where threshold "
+            f"for FUZZY_MATCH_RATIO is: {FUZZY_MATCH_RATIO}\n"
+        )
 
 
 def fuzzy_match(program, episode):
@@ -350,13 +356,14 @@ def main():
         return False
 
     get_epg_now()
+
     for program in programs_to_download:
         # Convert the timestamp from milliseconds to seconds
         start_time_ms = program["start_time"]
-        start_time_seconds = (int(start_time_ms) // 1000)
+        start_time_seconds = int(start_time_ms) // 1000
 
         end_time_ms = program["end_time"]
-        end_time_seconds = (int(end_time_ms) // 1000)
+        end_time_seconds = int(end_time_ms) // 1000
 
         # Convert the start_time_seconds to datetime object in UTC timezone
         start_time_utc = datetime.utcfromtimestamp(start_time_seconds).replace(tzinfo=pytz.UTC)
@@ -413,6 +420,7 @@ def main():
             print(f"Sleeping for: {time_to_sleep_till_next_program} seconds and current time is: "
                   f"{current_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
             time.sleep(time_to_sleep_till_next_program)
+
         main()
 
 
