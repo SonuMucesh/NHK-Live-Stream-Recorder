@@ -170,7 +170,8 @@ def sonarr(program):
             sonarr_date = datetime.strptime(episode.get('airDateUtc', ''),
                                             '%Y-%m-%dT%H:%M:%S%z').astimezone(pytz.UTC).date()
         except ValueError:
-            pass
+            print(f"Could not convert {episode.get('airDateUtc', '')} to datetime object defaulting to now")
+            sonarr_date = datetime.now(pytz.UTC).date()
 
         if sonarr_date == start_time_utc:
             print_sonarr_and_epg_episode_info(
