@@ -1,7 +1,7 @@
 # NHK Live Stream Recorder
 
 The NHK Live Stream Recorder is a Python script that allows you to download videos from the live stream based on a configured schedule. 
-It retrieves program information from NHK World and uses FFmpeg to download the videos. 
+It retrieves program information from NHK World and uses FFmpeg to download the shows. 
 It also supports integration with Sonarr to download only the episodes that are missing.
 
 ## Getting Started
