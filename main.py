@@ -119,7 +119,7 @@ def store_programs_to_download(program, sonarr_episode_name=None):
 
 def download_video(program):
     """
-    Download the video for the given program.
+    Download the video for the given program from the livestream.
     """
     print(f"Downloading for: {program['duration']} seconds")
     time_to_download = int(program["duration"])
