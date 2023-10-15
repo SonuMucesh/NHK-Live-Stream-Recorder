@@ -186,7 +186,7 @@ def sonarr(program):
             sonarr_date = datetime.strptime(episode.get('airDateUtc', ''), '%Y-%m-%dT%H:%M:%S%z').astimezone(
                 pytz.UTC).date()
         except Exception as e:
-            print(f"Error: {e}\n")
+            pass
 
         episode_info = {
             'epg_program_sub_title': epg_program_sub_title,
@@ -215,12 +215,20 @@ def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_c
     print("Program from EPG:")
     print(f"title: {epg_program_sub_title}")
     print(f"with non-converted air date: {epg_air_date}")
-    print(f"with converted air date: {epg_converted_air_date.strftime('%Y-%m-%d')}\n")
+
+    if epg_converted_air_date is not None:
+        print(f"with converted air date: {epg_converted_air_date.strftime('%Y-%m-%d')}\n")
+    else:
+        print(f"Cant convert air date: {epg_air_date}\n")
 
     print("Program from Sonarr:")
     print(f"title: {sonarr_episode_title}")
     print(f"non-converted air date: {sonarr_air_date}")
-    print(f"converted air date: {converted_sonarr_air_date.strftime('%Y-%m-%d')}\n")
+
+    if converted_sonarr_air_date is not None:
+        print(f"converted air date: {converted_sonarr_air_date.strftime('%Y-%m-%d')}\n")
+    else:
+        print(f"Cant convert air date: {sonarr_air_date}\n")
 
     if fuzzy_match_ratio is not None:
         print(
