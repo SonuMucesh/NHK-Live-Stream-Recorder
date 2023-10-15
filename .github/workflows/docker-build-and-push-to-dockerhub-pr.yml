@@ -25,6 +25,10 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Check if main.py has changed
+        id: check_changes
+        run: echo "::set-output name=changed::$(git diff --name-only HEAD^ -- main.py)"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -32,3 +36,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: sonumucesh/nhk-record:${{ github.event.pull_request.title }}
+        if: steps.check_changes.outputs.changed == 'main.py'

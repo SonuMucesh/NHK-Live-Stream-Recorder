@@ -40,24 +40,40 @@ sudo apt-get install ffmpeg
 
 1. Open the `config.json` file and configure the settings according to your needs. Modify the content of the file to:
 
+Adjust the following settings based on your preferences:
+
+```properties
+epg_url:The URL of the NHK World EPG. You can find it by running the specified command.
+local_timezone: The timezone of your location.
+recording_path: The directory path where the recordings will be saved.
+ffmpeg_log_path: The directory path where the FFmpeg logs will be saved.
+series_ids: The series IDs of the programs you want to record (more information below).
+livestream_url: The URL of the NHK World livestream.
+sonarr_integration: Set this to true if you want to use Sonarr integration.
+sonarr_url: The URL of your Sonarr instance.
+sonarr_api_key: The API key of your Sonarr instance.
+fuzzy_match_ratio: The fuzzy match ratio for the Sonarr integration. Adjust this number to balance accuracy and strictness of the match.
+series_ids_mapping: The mapping between the NHK World series IDs and the Sonarr series IDs (more information below). \
+  This mapping allows comparison of episodes on Sonarr and EPG. You can use series_ids_mapping or series_ids or both. \
+  However, only series_ids_mapping will work with Sonarr integration.
+```
+Here is an example of the configuration file that I use:
 ```json
 {
   "epg_url": "https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json",
   "local_timezone": "Europe/London",
   "recording_path": "/app/recordings",
   "ffmpeg_log_path": "/app/logs/ffmpeg.log",
-  "series_ids": ["2090"], --> This is the series ID 
+  "series_ids": ["2090"],
   "livestream_url": "https://nhkwlive-ojp.akamaized.net/hls/live/2003459/nhkwlive-ojp-en/index.m3u8",
-  "sonarr_integration": "True", --> This is the Sonarr integration, if you want to use it, set it to True
+  "sonarr_integration": true, 
   "sonarr_url": "YOUR_SONARR_URL", 
-  "sonarr_api_key": "YOUR_SONARR_API_KEY", --> You can find your Sonarr API key in Settings > General,
-  "fuzzy_match_ratio": "85", --> This is the fuzzy match ratio, the higher the number the more accurate the match will be but it will also be more strict
+  "sonarr_api_key": "YOUR_SONARR_API_KEY",
+  "fuzzy_match_ratio": 85,
   "series_ids_mapping": [
-     --> This mapping allows us to compare episodes on Sonarr and EPG you can use this or series_ids or both.
-         However only series_ids_mapping will work with Sonarr integration
     {
-      "nhk_series_id": "4026", --> This is the NHK Series ID From the EPG same as the one above
-      "tv_db_id": "323119" --> This is the TVDB Series ID From Sonarr
+      "nhk_series_id": "4026", 
+      "tv_db_id": "323119"
     },
     {
       "nhk_series_id": "2066",
@@ -71,7 +87,8 @@ sudo apt-get install ffmpeg
 }
 ```
 
-The Series IDs can be retrieved from this command:
+
+The Series IDs can be retrieved from this command if you want to get it from the EPG:
 
 ```bash
 curl --location 'https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json'
@@ -117,17 +134,44 @@ Which returns the EPG in JSON format where `seriesId` is the Series ID:
     }
 ```
 
+Another way to get the `Series ID` is to go to the program page on NHK World and then get the name of the show to use in the request below:
+
+```bash
+curl --location 'https://www3.nhk.or.jp/nhkworld/data/en/tv/program/{YOUR-PROGRAM}.json'
+```
+
+For example the page for `Somewhere Street` is [https://www3.nhk.or.jp/nhkworld/en/tv/somewhere/](https://www3.nhk.or.jp/nhkworld/en/tv/somewhere/)
+use the `somewhere` bit of the URL to get the Series ID:
+```bash
+curl --location 'https://www3.nhk.or.jp/nhkworld/data/en/tv/program/somewhere.json'
+```
+
+this returns this where the `id` is the Series ID:
+```json
+{
+  "id": "4017",
+  "lang": "en",
+  "title": "Somewhere Street",
+  "description": "A unique walking-eye view of cities around the globe! Chat to the locals and enjoy encounters that only strolling the streets can bring.",
+  "broadcastDay": "Sunday (UTC)",
+  "created_at": "Fri, 16 Feb 2018 21:44:19 +0900",
+  "updated_at": "Wed, 19 Jul 2023 15:59:51 +0900",
+  "public_at": 1518785059000,
+  "program_slag": "somewhere"
+}
+```
+
 2. Save the `config.json` file with your changes.
 
 ### Usage
 
-To run the NHK Stream Downloader, execute the following command:
+To run the NHK Stream Downloader, execute the following command where the config file is located:
 
 ```bash
 python main.py
 ```
 
-The script will retrieve the Electronic Program Guide (EPG) from the NHK World and download the videos based on the configured schedule.
+The script will retrieve the Electronic Program Guide (EPG) from the NHK World and download the programs based on the configured schedule.
 
 ### Running with Docker
 
@@ -171,7 +215,7 @@ services:
       - ./logs:/app/logs
  ```
 
-Make sure to replace `/path/to/config.json` and `/path/to/recordings` with the actual paths to your configuration file and desired output directory.
+Make sure to replace `/path/to/config.json`, `/path/to/recordings` and `./logs`with the actual paths to your configuration file and desired output directory.
 
 ### Contributing
 
