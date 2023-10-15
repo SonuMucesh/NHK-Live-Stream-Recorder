@@ -40,4 +40,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: sonumucesh/nhk-record:${{ github.event.pull_request.title }}
-        if: ${{ contains(env.changed, 'main.py') || contains(env.changed, 'Dockerfile') || contains(env.changed, 'requirements.txt') }}
+        if: ${{ contains(github.event.pull_request.changed_files, 'main.py') || contains(github.event.pull_request.changed_files, 'Dockerfile') || contains(github.event.pull_request.changed_files, 'requirements.txt') }}
