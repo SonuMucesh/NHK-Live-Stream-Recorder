@@ -13,6 +13,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check if main.py, Dockerfile, and requirements.txt have changed
+        id: check_changes
+        uses: tj-actions/changed-files@v39
+        with:
+          files: main.py Dockerfile requirements.txt
+      - name: Set changed files as environment variable
+        run: echo "changed=${{ steps.check_changes.outputs.files }}" >> $GITHUB_ENV
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -25,14 +33,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Check if main.py has changed
-        id: check_changes
-        uses: tj-actions/changed-files@v39
-        with:
-          files: main.py
-      - name: Set changed files as environment variable
-        run: echo "changed=${{ steps.check_changes.outputs.files }}" >> $GITHUB_ENV
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -40,4 +40,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: sonumucesh/nhk-record:${{ github.event.pull_request.title }}
-        if: ${{ env.changed == 'main.py' }}
+        if: ${{ contains(env.changed, 'main.py') || contains(env.changed, 'Dockerfile') || contains(env.changed, 'requirements.txt') }}
