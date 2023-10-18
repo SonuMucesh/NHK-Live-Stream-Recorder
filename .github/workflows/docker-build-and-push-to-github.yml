@@ -23,14 +23,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract pull request number
-      id: pr
-      run: echo "::set-output name=number::$(echo ${GITHUB_REF} | cut -d '/' -f 3)"
-      shell: bash
-
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:${{ steps.ref.outputs.tag }}
+        tags: ghcr.io/${{ github.repository }}:$latest
