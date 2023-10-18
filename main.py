@@ -157,7 +157,8 @@ def download_video(program):
     process.wait()
 
     print(f"Download finished for: {filename}")
-    programs_to_download.remove(program)
+    if program in programs_to_download:
+        programs_to_download.remove(program)
     print(f"Programs to download left: {len(programs_to_download)}\n")
 
 
