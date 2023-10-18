@@ -1,35 +1,33 @@
 # NHK Live Stream Recorder
 
-The NHK Live Stream Recorder is a Python script that allows you to download videos from the live stream based on a configured schedule. 
-It retrieves program information from NHK World and uses FFmpeg to download the shows. 
-It also supports integration with Sonarr to download only the episodes that are missing.
+The NHK Live Stream Recorder, a Python script, enables you to schedule and download videos from live streams. It fetches program details from NHK World and leverages FFmpeg for the actual downloading of shows. Additionally, it offers Sonarr integration, allowing for selective downloading of only the missing episodes.
 
 ## Getting Started
 
-These instructions will help you get the NHK Live Stream Recorder up and running on your local machine or in a Docker container.
+Follow these guidelines to successfully set up the NHK Live Stream Recorder either on your local machine or within a Docker container.
 
 ### Prerequisites
 
 - Python 3.9 or later
 - FFmpeg
 - Docker (optional)
-- Sonarr (optional)
+- Sonarr (optional) -- This can be enabled in the `config.json` file. Please note there are certain conditions associated with its use, detailed in the Important Notes! section.
 
 ### Installation
 
-1. Clone this repository or download the source code.
+1. Obtain the repository by either cloning it or downloading the source code.
 
 ```bash
 git clone https://github.com/SonuMucesh/NHK-Live-Stream-Recorder.git
 ```
 
-2. Install the Python dependencies by running the following command in the project directory:
+2. Navigate to the project directory and install the necessary Python dependencies with the following command:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Install FFmpeg. If you're using a Linux-based system, you can install it with the following command:
+3. FFmpeg is required for the script to function. If you're on a Linux-based system, you can install it using the commands below:
 
 ```bash
 sudo apt-get update
@@ -38,25 +36,20 @@ sudo apt-get install ffmpeg
 
 ### Configuration
 
-1. Open the `config.json` file and configure the settings according to your needs. Modify the content of the file to:
+1. Modify the config.json file according to your preferences:
 
-Adjust the following settings based on your preferences:
+- `epg_url`: The URL of the NHK World EPG. You can find it by running the specified command.
+- `local_timezone`: The timezone of your location.
+- `recording_path`: The directory path where the recordings will be saved.
+- `ffmpeg_log_path`: The directory path where the FFmpeg logs will be saved.
+- `series_ids`: The series IDs of the programs you want to record (more information below).
+- `livestream_url`: The URL of the NHK World livestream.
+- `sonarr_integration`: Set this to true if you want to use Sonarr integration.
+- `sonarr_url`: The URL of your Sonarr instance.
+- `sonarr_api_key`: The API key of your Sonarr instance.
+- `fuzzy_match_ratio`: The fuzzy match ratio for the Sonarr integration. Adjust this number to balance accuracy and strictness of the match.
+- `series_ids_mapping`: The mapping between the NHK World series IDs and the Sonarr series IDs. This mapping allows comparison of episodes on Sonarr and EPG. You can use `series_ids_mapping` or `series_ids` or both. However, only `series_ids_mapping` will work with Sonarr integration.
 
-```properties
-epg_url:The URL of the NHK World EPG. You can find it by running the specified command.
-local_timezone: The timezone of your location.
-recording_path: The directory path where the recordings will be saved.
-ffmpeg_log_path: The directory path where the FFmpeg logs will be saved.
-series_ids: The series IDs of the programs you want to record (more information below).
-livestream_url: The URL of the NHK World livestream.
-sonarr_integration: Set this to true if you want to use Sonarr integration.
-sonarr_url: The URL of your Sonarr instance.
-sonarr_api_key: The API key of your Sonarr instance.
-fuzzy_match_ratio: The fuzzy match ratio for the Sonarr integration. Adjust this number to balance accuracy and strictness of the match.
-series_ids_mapping: The mapping between the NHK World series IDs and the Sonarr series IDs (more information below). \
-  This mapping allows comparison of episodes on Sonarr and EPG. You can use series_ids_mapping or series_ids or both. \
-  However, only series_ids_mapping will work with Sonarr integration.
-```
 Here is an example of the configuration file that I use:
 ```json
 {
@@ -87,7 +80,6 @@ Here is an example of the configuration file that I use:
 }
 ```
 
-
 The Series IDs can be retrieved from this command if you want to get it from the EPG:
 
 ```bash
@@ -96,6 +88,8 @@ curl --location 'https://nwapi.nhk.jp/nhkworld/epg/v7b/world/now.json'
 
 Which returns the EPG in JSON format where `seriesId` is the Series ID:
 
+<details>
+  <summary>Click to expand the response</summary>
 ```json
     "channel": {
         "item": [
@@ -133,20 +127,21 @@ Which returns the EPG in JSON format where `seriesId` is the Series ID:
         ]
     }
 ```
+</details>
+&nbsp;
 
-Another way to get the `Series ID` is to go to the program page on NHK World and then get the name of the show to use in the request below:
+Alternatively, you can obtain the `Series ID` by visiting the program page on NHK World and extracting the show's name to use in the following request:
 
 ```bash
-curl --location 'https://www3.nhk.or.jp/nhkworld/data/en/tv/program/{YOUR-PROGRAM}.json'
+curl --location `'https://www3.nhk.or.jp/nhkworld/data/en/tv/program/{YOUR-PROGRAM}.json'`
 ```
 
-For example the page for `Somewhere Street` is [https://www3.nhk.or.jp/nhkworld/en/tv/somewhere/](https://www3.nhk.or.jp/nhkworld/en/tv/somewhere/)
-use the `somewhere` bit of the URL to get the Series ID:
+For instance, if you visit the Somewhere Street page at `https://www3.nhk.or.jp/nhkworld/en/tv/somewhere/`, you can use the somewhere segment of the URL to fetch the `Series ID`:
 ```bash
 curl --location 'https://www3.nhk.or.jp/nhkworld/data/en/tv/program/somewhere.json'
 ```
 
-this returns this where the `id` is the Series ID:
+The response will be a JSON object where the id field is the `Series ID`:
 ```json
 {
   "id": "4017",
@@ -165,17 +160,17 @@ this returns this where the `id` is the Series ID:
 
 ### Usage
 
-To run the NHK Stream Downloader, execute the following command where the config file is located:
+To initiate the NHK Stream Downloader, navigate to the directory containing the config file and run the following command:
 
 ```bash
 python main.py
 ```
 
-The script will retrieve the Electronic Program Guide (EPG) from the NHK World and download the programs based on the configured schedule.
+Upon execution, the script fetches the Electronic Program Guide (EPG) from NHK World and proceeds to download programs according to the schedule specified in the configuration.
 
 ### Running with Docker
 
-Alternatively, you can use Docker to run the NHK Stream Downloader. Make sure you have Docker installed on your machine.
+As an alternative, Docker can be used to run the NHK Stream Downloader. Ensure Docker is installed on your machine before proceeding.
 
 1. Pull the Docker image from the [DockerHub repository](https://hub.docker.com/repository/docker/sonumucesh/nhk-record/general) or build it yourself:
 
@@ -183,11 +178,13 @@ Alternatively, you can use Docker to run the NHK Stream Downloader. Make sure yo
 docker build -t nhk-stream-dl .
 ```
 
+or
+
 ```bash
 docker pull sonumucesh/nhk-record:latest
 ```
 
-2. Start a Docker container using the following command:
+2. Launch a Docker container with the following command:
 
 ```bash
 docker run -d \
@@ -199,7 +196,7 @@ docker run -d \
   sonumucesh/nhk-record:latest
 ```
 
-3. You can also run the container using docker-compose:
+3. Alternatively, the container can be run using `docker-compose`:
 
 ```bash
 version: '3'
@@ -216,6 +213,24 @@ services:
  ```
 
 Make sure to replace `/path/to/config.json`, `/path/to/recordings` and `./logs`with the actual paths to your configuration file and desired output directory.
+
+## Important Notes
+
+1. Sonarr uses TVDB for metadata. If the data on TVDB is incorrect, the program might not be labeled correctly in Sonarr. Please ensure the data on TheTVDB is accurate for the best results i.e if you know an episode is going to air and it's not on TVDB then add it there.
+
+2. To check if the airing episode on NHK and the episode on Sonarr are the same, we use two methods for comparison:
+
+   - First, we check if the episode air date is the same on both platforms.
+   - As a fallback, we check if the title of the episode matches the subtitle on NHK.
+
+   However, sometimes the NHK API doesn't provide a subtitle, so the comparison relies solely on the air dates. If both checks fail, we still download the episode as a precaution to avoid losing any content.
+
+3. While there is no definitive NHK API available, making the process more challenging, the script has been tested and reliably matches episodes in Sonarr and NHK for several shows. For example, it has been successfully used with `"Somewhere Street"`, `"Document 72 Hours"`, and `"Cycle Around Japan"`. However, your experience may vary depending on the specific shows and episodes you are trying to match.
+
+In the near future, we plan to update this comparison method to make it more reliable. Please stay tuned for updates.
+
+## Disclaimer
+Please note that this script is provided for educational and informational purposes only. It is intended to demonstrate the capabilities of Python and Docker in automating tasks such as downloading and scheduling. It is not intended to infringe upon any rights of NHK World or any other third party. Users are responsible for ensuring that their use of this script complies with all local, national, and international laws and regulations. The creators and contributors of this script are not responsible for any misuse or any consequences thereof.
 
 ### Contributing
 
