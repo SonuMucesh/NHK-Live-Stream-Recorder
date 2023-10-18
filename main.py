@@ -216,6 +216,17 @@ def sonarr(program):
                 store_programs_to_download(program)
 
 
+def fuzzy_match(program, episode):
+    """
+    Check if the program and episode title match.
+    :param program: from EPG
+    :param episode: from Sonarr
+    :return: The fuzzy match ratio.
+    """
+    title_ratio = fuzz.ratio(program['subtitle'], episode['title'])
+    return title_ratio
+
+
 def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_converted_air_date, sonarr_episode_title,
                                       sonarr_air_date, converted_sonarr_air_date, fuzzy_match_ratio=None):
     """
@@ -252,17 +263,6 @@ def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_c
             f"Fuzzy ratio between names: {fuzzy_match_ratio} where threshold "
             f"for FUZZY_MATCH_RATIO is: {FUZZY_MATCH_RATIO}\n"
         )
-
-
-def fuzzy_match(program, episode):
-    """
-    Check if the program and episode title match.
-    :param program: from EPG
-    :param episode: from Sonarr
-    :return: The fuzzy match ratio.
-    """
-    title_ratio = fuzz.ratio(program['subtitle'], episode['title'])
-    return title_ratio
 
 
 def check_if_duplicate(series, episode):
