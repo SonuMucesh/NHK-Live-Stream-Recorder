@@ -90,45 +90,47 @@ Which returns the EPG in JSON format where `seriesId` is the Series ID:
 
 <details>
   <summary>Click to expand the response</summary>
+  
 ```json
-    "channel": {
-        "item": [
-            {
-                "seriesId": "2093",
-                "airingId": "048",
-                "title": "Zero Waste Life",
-                "description": "Nihei Toru sells restored old furniture; bringing out the hidden charm in pieces most would consider worthless. But instead of going for good-as-new, he strives to preserve their vintage feel.",
-                "link": "/nhkworld/en/tv/zerowaste/20231013/2093048/",
-                "pubDate": "1697201100000",
-                "endDate": "1697202000000",
-                "vodReserved": false,
-                "jstrm": "1",
-                "wstrm": "1",
-                "subtitle": "Furniture: Shabby to Chic",
-                "content": "In this era of cheap, mass-produced products, Nihei Toru sells restored old furniture at his shop in a verdant mountain village north of Tokyo. Pieces that were in bad condition are brought back from the dead. But rather than aiming for good-as-new, he strives to preserve their vintage feel. His passion even extends to his own home—once abandoned and decaying—now tastefully restored. To him, bringing out the hidden charm of such seemingly worthless things far more than just a job, it's a way of life.",
-                "content_clean": "In this era of cheap, mass-produced products, Nihei Toru sells restored old furniture at his shop in a verdant mountain village north of Tokyo. Pieces that were in bad condition are brought back from the dead. But rather than aiming for good-as-new, he strives to preserve their vintage feel. His passion even extends to his own home—once abandoned and decaying—now tastefully restored. To him, bringing out the hidden charm of such seemingly worthless things far more than just a job, it's a way of life.",
-                "pgm_gr_id": "zerowaste",
-                "thumbnail": "/nhkworld/upld/thumbnails/en/tv/zerowaste/c63812fdd3e2abf089a5dd193fbb94b7_large.jpg",
-                "thumbnail_s": "/nhkworld/upld/thumbnails/en/tv/zerowaste/c63812fdd3e2abf089a5dd193fbb94b7_small.jpg",
-                "showlist": "1",
-                "internal": "1",
-                "genre": {
-                    "TV": [
-                        "20",
-                        "18"
-                    ],
-                    "Top": "",
-                    "LC": ""
-                },
-                "vod_id": "nw_vod_v_en_2093_048_20231013104500_01_1697177378",
-                "vod_url": "/nhkworld/en/ondemand/video/2093048/",
-                "analytics": "[nhkworld]simul;Zero Waste Life_Furniture: Shabby to Chic;w02,001;2093-048-2023;2023-10-13T21:45:00+09:00"
-            },
-        ]
-    }
+{
+  "channel": {
+    "item": [
+      {
+        "seriesId": "2093",
+        "airingId": "048",
+        "title": "Zero Waste Life",
+        "description": "Nihei Toru sells restored old furniture; bringing out the hidden charm in pieces most would consider worthless. But instead of going for good-as-new, he strives to preserve their vintage feel.",
+        "link": "/nhkworld/en/tv/zerowaste/20231013/2093048/",
+        "pubDate": "1697201100000",
+        "endDate": "1697202000000",
+        "vodReserved": false,
+        "jstrm": "1",
+        "wstrm": "1",
+        "subtitle": "Furniture: Shabby to Chic",
+        "content": "In this era of cheap, mass-produced products, Nihei Toru sells restored old furniture at his shop in a verdant mountain village north of Tokyo. Pieces that were in bad condition are brought back from the dead. But rather than aiming for good-as-new, he strives to preserve their vintage feel. His passion even extends to his own home—once abandoned and decaying—now tastefully restored. To him, bringing out the hidden charm of such seemingly worthless things far more than just a job, it's a way of life.",
+        "content_clean": "In this era of cheap, mass-produced products, Nihei Toru sells restored old furniture at his shop in a verdant mountain village north of Tokyo. Pieces that were in bad condition are brought back from the dead. But rather than aiming for good-as-new, he strives to preserve their vintage feel. His passion even extends to his own home—once abandoned and decaying—now tastefully restored. To him, bringing out the hidden charm of such seemingly worthless things far more than just a job, it's a way of life.",
+        "pgm_gr_id": "zerowaste",
+        "thumbnail": "/nhkworld/upld/thumbnails/en/tv/zerowaste/c63812fdd3e2abf089a5dd193fbb94b7_large.jpg",
+        "thumbnail_s": "/nhkworld/upld/thumbnails/en/tv/zerowaste/c63812fdd3e2abf089a5dd193fbb94b7_small.jpg",
+        "showlist": "1",
+        "internal": "1",
+        "genre": {
+          "TV": [
+            "20",
+            "18"
+          ],
+          "Top": "",
+          "LC": ""
+        },
+        "vod_id": "nw_vod_v_en_2093_048_20231013104500_01_1697177378",
+        "vod_url": "/nhkworld/en/ondemand/video/2093048/",
+        "analytics": "[nhkworld]simul;Zero Waste Life_Furniture: Shabby to Chic;w02,001;2093-048-2023;2023-10-13T21:45:00+09:00"
+      }
+    ]
+  }
+}
 ```
 </details>
-&nbsp;
 
 Alternatively, you can obtain the `Series ID` by visiting the program page on NHK World and extracting the show's name to use in the following request:
 
