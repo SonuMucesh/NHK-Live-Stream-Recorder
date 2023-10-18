@@ -193,7 +193,7 @@ def sonarr(program):
             'epg_program_sub_title': epg_program_sub_title,
             'epg_air_date': epg_air_date,
             'epg_converted_air_date': start_time_utc,
-            'sonarr_episode_title': episode['title'],
+            'sonarr_episode_title': episode.get('title', ''),
             'sonarr_air_date': episode.get('airDateUtc', ''),
             'converted_sonarr_air_date': sonarr_date
         }
