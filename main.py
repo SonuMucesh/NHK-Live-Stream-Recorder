@@ -44,6 +44,7 @@ def get_epg_now():
     """
     Get the current EPG and store the programs that match the series IDs in the global variable `programs_to_download`.
     If no programs are found, sleep until the next program starts.
+    :return: The current EPG.
     """
     response = requests.get(EPG_URL, headers=HEADERS)
     epg_json_response = response.json()
@@ -95,6 +96,9 @@ def get_epg_now():
 def store_programs_to_download(program, sonarr_episode_name=None):
     """
     Store the program to download in the global variable `programs_to_download`.
+    :param program: The program to store.
+    :param sonarr_episode_name: The episode name to use for Sonarr.
+    :return: The program to download.
     """
     print(f"Program: {json.dumps(program)}")
     print("Storing program to download")
@@ -120,6 +124,8 @@ def store_programs_to_download(program, sonarr_episode_name=None):
 def download_video(program):
     """
     Download the video for the given program from the livestream.
+    :param program: The program to download.
+    :return: The downloaded video.
     """
     print(f"Downloading for: {program['duration']} seconds")
     time_to_download = int(program["duration"])
@@ -165,6 +171,8 @@ def download_video(program):
 def sonarr(program):
     """
     Check if the program is available on Sonarr and store the program to download with the correct episode name.
+    :param program: The program to check on Sonarr.
+    :return: The program to download.
     """
     epg_program_sub_title = program["subtitle"]
     epg_air_date = program["pubDate"]
@@ -212,6 +220,14 @@ def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_c
                                       sonarr_air_date, converted_sonarr_air_date, fuzzy_match_ratio=None):
     """
     Print the episode information from Sonarr and the EPG.
+    :param epg_program_sub_title: The subtitle of the program from the EPG.
+    :param epg_air_date: The air date of the program from the EPG.
+    :param epg_converted_air_date: The converted air date of the program from the EPG.
+    :param sonarr_episode_title: The title of the episode from Sonarr.
+    :param sonarr_air_date: The air date of the episode from Sonarr.
+    :param converted_sonarr_air_date: The converted air date of the episode from Sonarr.
+    :param fuzzy_match_ratio: The fuzzy match ratio between the EPG and Sonarr episode.
+    :return: None
     """
     print("Program from EPG:")
     print(f"title: {epg_program_sub_title}")
@@ -239,6 +255,12 @@ def print_sonarr_and_epg_episode_info(epg_program_sub_title, epg_air_date, epg_c
 
 
 def fuzzy_match(program, episode):
+    """
+    Check if the program and episode title match.
+    :param program: from EPG
+    :param episode: from Sonarr
+    :return: The fuzzy match ratio.
+    """
     title_ratio = fuzz.ratio(program['subtitle'], episode['title'])
     return title_ratio
 
@@ -247,6 +269,9 @@ def check_if_duplicate(series, episode):
     """
     Check if the episode has already been downloaded.
     If it hasn't, return the episode title.
+    :param series: The series from Sonarr.
+    :param episode: The episode from Sonarr.
+    :return: The episode title if it hasn't been downloaded, False if it has.
     """
     if episode['hasFile']:
         print("The episode has already been downloaded.")
@@ -262,6 +287,7 @@ def check_if_duplicate(series, episode):
 def use_config_to_set_variables():
     """
     Use the `config.json` file to set the global variables.
+    :return: True if the config was loaded successfully, False otherwise.
     """
     global LOCAL_TIMEZONE, RECORDING_PATH, SERIES_IDS, EPG_URL, LIVESTREAM_URL, SONARR_INTEGRATION, \
         SONARR_URL, SONARR_API_KEY, SERIES_IDS_MAPPING, FFMPEG_LOG_PATH, FUZZY_MATCH_RATIO
@@ -359,6 +385,7 @@ def use_config_to_set_variables():
 def main():
     """
     The main function that runs the program.
+    :return: Hopefully nothing.
     """
     # Check if the config.json file exists and if it does, use it to set the variables
     if use_config_to_set_variables() is False:
