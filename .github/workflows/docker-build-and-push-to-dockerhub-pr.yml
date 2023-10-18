@@ -1,3 +1,5 @@
+name: Docker Build and Push to GitHub Container Registry From PR
+
 on:
   pull_request:
     branches:
@@ -30,26 +32,3 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: sonumucesh/nhk-record:${{ github.event.pull_request.head.ref }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract repository name
-        id: extract-repo-name
-        run: echo "::set-output name=repo_name::$(basename $GITHUB_REPOSITORY)"
-
-      - name: Convert repository name to lowercase
-        id: lowercase-repo-name
-        run: echo "::set-output name=repo_name::${{ steps.extract-repo-name.outputs.repo_name | lower }}"
-
-      - name: Build and push Docker image to GitHub Container Registry
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ steps.lowercase-repo-name.outputs.repo_name }}/nhk-record:${{ github.event.pull_request.head.ref }}
