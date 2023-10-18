@@ -461,4 +461,7 @@ def main():
 
 
 if __name__ == '__main__':
+    """
+    The main entry point for the program.
+    """
     main()
