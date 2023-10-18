@@ -27,5 +27,8 @@ jobs:
       - name: Install pytest
         run: pip install pytest
 
-      - name: Run unit tests
+      - name: Copy main.py to tests folder
+        run: cp main.py tests/
+
+      - name: Run tests
         run: pytest tests/

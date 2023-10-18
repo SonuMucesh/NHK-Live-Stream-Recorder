@@ -1,6 +1,10 @@
 import unittest
 import json
 from unittest.mock import patch, mock_open
+import sys
+
+sys.path.append("..")
+
 from main import use_config_to_set_variables
 
 
