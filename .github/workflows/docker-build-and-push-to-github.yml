@@ -23,9 +23,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Convert GitHub reference to lowercase
+      id: ref
+      run: echo "::set-output name=tag::${GITHUB_REF#refs/*/}"
+      shell: bash
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:${{ github.event.pull_request.head.ref }}
+        tags: ghcr.io/${{ github.repository }}:${{ steps.ref.outputs.tag }}
