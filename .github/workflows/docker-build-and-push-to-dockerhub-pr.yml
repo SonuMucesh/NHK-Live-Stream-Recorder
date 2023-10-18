@@ -1,4 +1,4 @@
-name: Docker Build and Push to GitHub Container Registry From PR
+name: Docker Build and Push to Docker Hub
 
 on:
   pull_request:

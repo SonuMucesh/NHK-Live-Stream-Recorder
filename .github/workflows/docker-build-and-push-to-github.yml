@@ -1,4 +1,4 @@
-name: Build and Push Docker Image To GitHub Container Registry
+name: Docker Build and Push Docker Image To GitHub Container Registry
 
 on:
   pull_request:
