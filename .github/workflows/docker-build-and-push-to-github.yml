@@ -1,7 +1,7 @@
 name: Docker Build and Push Docker Image To GitHub Container Registry
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
