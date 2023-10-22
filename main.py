@@ -212,8 +212,18 @@ def sonarr(program):
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
+                return
             elif episode_title is not False:
                 store_programs_to_download(program)
+                return
+
+    if program["subtitle"] != "":
+        print(f"Searched for Sonarr episode for: {program['title']} - {program['subtitle']} but no match found.")
+    else:
+        print(f"Searched for Sonarr episode for: {program['title']} but no match found.")
+    print(f"So defaulting to download: {program['title']} - {program['subtitle']}\n")
+    store_programs_to_download(program)
+    return
 
 
 def fuzzy_match(program, episode):
