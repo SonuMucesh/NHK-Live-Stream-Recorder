@@ -57,6 +57,37 @@ def get_epg_now():
         if program["seriesId"] in SERIES_IDS_MAPPING.keys() or program["seriesId"] in SERIES_IDS
     ]
 
+    programs.clear()
+    programs.append({"seriesId": "4026", "airingId": "184", "title": "Document 72 Hours",
+                     "description": "A theater for rakugo comic storytelling in Tokyo's Asakusa district connects"
+                                    " performers and the audience through laughter. For three days, we peeked into"
+                                    " the various lives of the people there.", "link":
+                         "/nhkworld/en/tv/72hours/20231024/4026184/", "pubDate": "1698154200000",
+                     "endDate": "1698156000000", "vodReserved": False, "jstrm": "1", "wstrm": "1",
+                     "subtitle": "Asakusa's Rakugo Theater: Filling Lives with Laughs", "content":
+                         "A theater for rakugo comic storytelling in Tokyo's Asakusa district has been"
+                         " tickling funny bones for decades. Visitors to the theater include comedy fans "
+                         "from across Japan, and an admirer of a storyteller being promoted to rakugo's "
+                         "highest rank. Backstage, a teenager new to the industry completes a myriad of tasks,"
+                         " and a seasoned storyteller of more than 30 years prepares to go on stage. For three "
+                         "days, we peeked into the various lives of people in the audience and behind the scenes,"
+                         " and asked them about the appeal of this traditional performing art.", "content_clean":
+                         "A theater for rakugo comic storytelling in Tokyo's Asakusa district has been tickling funny"
+                         " bones for decades. Visitors to the theater include comedy fans from across Japan, and an"
+                         " admirer of a storyteller being promoted to rakugo's highest rank. Backstage, a teenager"
+                         " new to the industry completes a myriad of tasks, and a seasoned storyteller of more than 30 "
+                         "years prepares to go on stage. For three days, we peeked into the various lives of people in "
+                         "the audience and behind the scenes, and asked them about the appeal of this traditional"
+                         " performing art.", "pgm_gr_id": "72hours", "thumbnail":
+                         "/nhkworld/upld/thumbnails/en/tv/72hours/1eb291039779dcef0ce89498523b9070_large.jpg",
+                     "thumbnail_s":
+                         "/nhkworld/upld/thumbnails/en/tv/72hours/1eb291039779dcef0ce89498523b9070_small.jpg",
+                     "showlist": "1", "internal": "1", "genre": {"TV": "15", "Top": "11", "LC": ""}, "vod_id":
+                         "nw_vod_v_en_4026_184_20221101113000_01_1697602829", "vod_url":
+                         "/nhkworld/en/ondemand/video/4026184/", "analytics":
+                         "[nhkworld]simul;Document 72 Hours_Asakusa's Rakugo Theater:"
+                         " Filling Lives with Laughs;w02,001;4026-184-2023;2023-10-24T22:30:00+09:00"})
+
     if len(programs) == 0:
         print("No programs found from EPG")
 
@@ -174,6 +205,7 @@ def sonarr(program):
     :param program: The program to check on Sonarr.
     :return: The program to download.
     """
+    sonarr_match_found = False
     epg_program_sub_title = program["subtitle"]
     epg_air_date = program["pubDate"]
     nhk_series_id = program["seriesId"]
@@ -209,21 +241,20 @@ def sonarr(program):
         if (sonarr_date is not None and sonarr_date == start_time_utc) \
                 or fuzzy_match(program, episode) > FUZZY_MATCH_RATIO:
             print_sonarr_and_epg_episode_info(**episode_info)
+            sonarr_match_found = True
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
-                return
             elif episode_title is not False:
                 store_programs_to_download(program)
-                return
 
-    if program["subtitle"] != "":
-        print(f"Searched for Sonarr episode for: {program['title']} - {program['subtitle']} but no match found.")
-    else:
-        print(f"Searched for Sonarr episode for: {program['title']} but no match found.")
-    print(f"So defaulting to download: {program['title']} - {program['subtitle']}\n")
-    store_programs_to_download(program)
-    return
+    if not sonarr_match_found:
+        if program["subtitle"] != "":
+            print(f"Searched for Sonarr episode for: {program['title']} - {program['subtitle']} but no match found.")
+        else:
+            print(f"Searched for Sonarr episode for: {program['title']} but no match found.")
+        print(f"So defaulting to download: {program['title']} - {program['subtitle']}\n")
+        store_programs_to_download(program)
 
 
 def fuzzy_match(program, episode):
