@@ -174,6 +174,7 @@ def sonarr(program):
     :param program: The program to check on Sonarr.
     :return: The program to download.
     """
+    sonarr_match_found = False
     epg_program_sub_title = program["subtitle"]
     epg_air_date = program["pubDate"]
     nhk_series_id = program["seriesId"]
@@ -209,11 +210,20 @@ def sonarr(program):
         if (sonarr_date is not None and sonarr_date == start_time_utc) \
                 or fuzzy_match(program, episode) > FUZZY_MATCH_RATIO:
             print_sonarr_and_epg_episode_info(**episode_info)
+            sonarr_match_found = True
             episode_title = check_if_duplicate(series, episode)
             if episode_title:
                 store_programs_to_download(program, episode_title)
             elif episode_title is not False:
                 store_programs_to_download(program)
+
+    if not sonarr_match_found:
+        if program["subtitle"] != "":
+            print(f"Searched for Sonarr episode for: {program['title']} - {program['subtitle']} but no match found.")
+        else:
+            print(f"Searched for Sonarr episode for: {program['title']} but no match found.")
+        print(f"So defaulting to download: {program['title']} - {program['subtitle']}\n")
+        store_programs_to_download(program)
 
 
 def fuzzy_match(program, episode):
